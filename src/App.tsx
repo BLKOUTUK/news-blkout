@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import NewsroomHome from './components/pages/NewsroomHome';
 import ArticleDetail from './components/pages/ArticleDetail';
+import SubmitArticleForm from './components/ui/SubmitArticleForm';
 import Footer from './components/ui/Footer';
 
-type Page = 'home' | 'article';
+type Page = 'home' | 'article' | 'submit';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -48,7 +49,12 @@ function App() {
               </p>
             </div>
 
-            <div className="w-24"></div> {/* Spacer for centering */}
+            <button
+              onClick={() => setCurrentPage('submit')}
+              className="px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors text-sm"
+            >
+              Submit Story
+            </button>
           </div>
         </div>
       </nav>
@@ -60,6 +66,11 @@ function App() {
         )}
         {currentPage === 'article' && selectedArticleId && (
           <ArticleDetail articleId={selectedArticleId} onBack={navigateToHome} />
+        )}
+        {currentPage === 'submit' && (
+          <div className="max-w-3xl mx-auto px-4 py-8">
+            <SubmitArticleForm onClose={navigateToHome} />
+          </div>
         )}
       </main>
 
