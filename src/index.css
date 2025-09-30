@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --liberation-black: #000000;
+    --liberation-gold: #FFD700;
+    --liberation-gold-dark: #D4AF37;
+    --liberation-purple: #9B4DCA;
+    --liberation-teal: #00CED1;
+    --liberation-red: #DC143C;
+    --liberation-green: #2E8B57;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-liberation-black-power text-white antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .liberation-glow {
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--liberation-gold-dark);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--liberation-gold);
+}
+
+/* Accessibility: Focus styles */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-liberation-gold-divine;
+}
