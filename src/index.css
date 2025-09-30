@@ -13,10 +13,6 @@
     --liberation-green: #2E8B57;
   }
 
-  * {
-    @apply border-border;
-  }
-
   body {
     @apply bg-liberation-black-power text-white antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
