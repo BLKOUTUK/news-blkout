@@ -16,7 +16,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Database table names
 export const TABLES = {
-  ARTICLES: 'newsroom_articles',
+  ARTICLES: 'news_articles',
+  LEGACY_ARTICLES: 'legacy_articles',
+  VOICES: 'voices_articles',
   VOTES: 'newsroom_votes',
   WRITERS: 'newsroom_writers',
   NEWSLETTER: 'newsletter_subscriptions',

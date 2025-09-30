@@ -21,9 +21,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { id } = req.query;
 
       const { data, error } = await supabase
-        .from('newsroom_articles')
+        .from('news_articles')
         .select('*')
         .eq('id', id)
+        .eq('published', true)
+        .eq('status', 'published')
         .single();
 
       if (error) {

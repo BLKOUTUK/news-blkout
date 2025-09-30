@@ -21,9 +21,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { category, sortBy = 'interest', status = 'published', limit = '20' } = req.query;
 
       let query = supabase
-        .from('newsroom_articles')
+        .from('news_articles')
         .select('*')
-        .eq('status', status)
+        .eq('published', true)
+        .eq('status', 'published')
         .limit(parseInt(limit as string, 10));
 
       // Filter by category
@@ -33,7 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Sort
       if (sortBy === 'interest') {
-        query = query.order('interest_score', { ascending: false });
+        query = query.order('interest_score', { ascending: false })
+                     .order('published_at', { ascending: false });
       } else if (sortBy === 'weekly') {
         query = query.order('is_story_of_week', { ascending: false })
                      .order('weekly_rank', { ascending: true });
