@@ -3,9 +3,10 @@ import { ArrowLeft } from 'lucide-react';
 import NewsroomHome from './components/pages/NewsroomHome';
 import ArticleDetail from './components/pages/ArticleDetail';
 import SubmitArticleForm from './components/ui/SubmitArticleForm';
+import ModerationDashboard from './components/pages/ModerationDashboard';
 import Footer from './components/ui/Footer';
 
-type Page = 'home' | 'article' | 'submit';
+type Page = 'home' | 'article' | 'submit' | 'admin';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -71,6 +72,9 @@ function App() {
           <div className="max-w-3xl mx-auto px-4 py-8">
             <SubmitArticleForm onClose={navigateToHome} />
           </div>
+        )}
+        {currentPage === 'admin' && (
+          <ModerationDashboard />
         )}
       </main>
 
