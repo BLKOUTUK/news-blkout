@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, Loader2, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface QueueItem {
@@ -107,10 +107,48 @@ const ModerationDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-liberation-gold-divine mb-2">
-            Moderation Dashboard
-          </h1>
-          <p className="text-gray-400">Review and approve community submissions</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-liberation-gold-divine mb-2">
+                Moderation Dashboard
+              </h1>
+              <p className="text-gray-400">Review and approve community submissions</p>
+            </div>
+
+            {/* Chrome Extension Download */}
+            <a
+              href="/extension-download.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Get Extension
+            </a>
+          </div>
+
+          {/* Extension Info Banner */}
+          <div className="mt-4 p-4 bg-gray-800/50 border border-liberation-gold-divine/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-liberation-gold-divine/20 rounded-md">
+                <Download className="w-5 h-5 text-liberation-gold-divine" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">Chrome Extension for Moderators</h3>
+                <p className="text-sm text-gray-400 mb-2">
+                  Submit articles and events directly from any webpage. Auto-detects content from news sites and event platforms.
+                </p>
+                <a
+                  href="/extension-download.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-liberation-gold-divine hover:underline inline-flex items-center gap-1"
+                >
+                  Download & Installation Instructions <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Filter Tabs */}
