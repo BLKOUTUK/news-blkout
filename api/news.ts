@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const { category, sortBy = 'interest', status = 'published', limit = '20' } = req.query;
+      const { category, sortBy = 'interest', limit = '20' } = req.query;
 
       let query = supabase
         .from('news_articles')
