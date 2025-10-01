@@ -80,20 +80,36 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* Hero Section */}
-      <section className="py-16 px-4 md:px-8 border-b border-white/10">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-6">
-            THE NEWS THAT <span className="text-liberation-gold-divine">MATTERS</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-300 mb-4 max-w-3xl mx-auto">
-            Curated by us, for us. Community-selected stories that shape our understanding
-            and inspire action.
-          </p>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Phase 1: Building our shared news agenda through community curation and votes.
-            Your engagement trains IVOR to discover stories that matter to Black queer liberation.
-          </p>
+      {/* Hero Video Section */}
+      <section className="relative h-[60vh] md:h-[70vh] overflow-hidden border-b border-white/10">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/videos/hero/Hero4blkout(1).mp4" type="video/mp4" />
+        </video>
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black"></div>
+
+        {/* Hero content */}
+        <div className="relative h-full flex items-center justify-center px-4 md:px-8">
+          <div className="max-w-7xl mx-auto text-center">
+            <h1 className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-lg">
+              THE NEWS THAT <span className="text-liberation-gold-divine">MATTERS</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-100 mb-4 max-w-3xl mx-auto drop-shadow-md">
+              Curated by us, for us. Community-selected stories that shape our understanding
+              and inspire action.
+            </p>
+            <p className="text-gray-200 max-w-2xl mx-auto drop-shadow-md">
+              Phase 1: Building our shared news agenda through community curation and votes.
+              Your engagement trains IVOR to discover stories that matter to Black queer liberation.
+            </p>
+          </div>
         </div>
       </section>
 

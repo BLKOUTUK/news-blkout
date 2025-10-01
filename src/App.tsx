@@ -97,13 +97,20 @@ function App() {
               <span className="hidden sm:inline">Back to Platform</span>
             </button>
 
-            <div className="text-center">
-              <h1 className="text-xl md:text-2xl font-black">
-                BLKOUT <span className="text-liberation-gold-divine">NEWSROOM</span>
-              </h1>
-              <p className="text-xs text-gray-400 hidden md:block">
-                Community-Curated Liberation News
-              </p>
+            <div className="flex items-center gap-3">
+              <img
+                src="/images/blkoutlogo_wht_transparent.png"
+                alt="BLKOUT Logo"
+                className="h-10 md:h-12 w-auto"
+              />
+              <div className="text-left">
+                <h1 className="text-lg md:text-xl font-black leading-tight">
+                  <span className="text-liberation-gold-divine">NEWSROOM</span>
+                </h1>
+                <p className="text-xs text-gray-400 hidden md:block">
+                  Community-Curated Liberation News
+                </p>
+              </div>
             </div>
 
             <button
