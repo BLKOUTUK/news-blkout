@@ -49,58 +49,56 @@ const ModerationDashboard: React.FC = () => {
 
   const handleApprove = async (item: QueueItem) => {
     try {
-      // Move to news_articles table
-      const { error: insertError } = await supabase
-        .from('news_articles')
-        .insert([{
-          title: item.title,
-          excerpt: item.excerpt,
-          content: item.excerpt, // Use excerpt as content for now
-          category: item.category || 'community',
-          author: item.submitted_by || 'Community',
-          source_url: item.url,
-          source_name: 'Community Submission',
-          status: 'published',
-          published: true,
-          published_at: new Date().toISOString(),
-          interest_score: item.votes || 0,
-          total_votes: item.votes || 0,
-        }]);
+      const response = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'approve',
+          itemId: item.id,
+          item: item,
+        }),
+      });
 
-      if (insertError) throw insertError;
+      const result = await response.json();
 
-      // Update queue status
-      const { error: updateError } = await supabase
-        .from('moderation_queue')
-        .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-        .eq('id', item.id);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to approve item');
+      }
 
-      if (updateError) throw updateError;
-
+      alert('Article approved and published!');
       fetchQueueItems();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving item:', error);
-      alert('Failed to approve item');
+      alert(`Failed to approve item: ${error.message}`);
     }
   };
 
   const handleReject = async (item: QueueItem) => {
     try {
-      const { error } = await supabase
-        .from('moderation_queue')
-        .update({
-          status: 'rejected',
-          reviewed_at: new Date().toISOString(),
-          review_notes: 'Rejected by moderator'
-        })
-        .eq('id', item.id);
+      const response = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reject',
+          itemId: item.id,
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reject item');
+      }
+
+      alert('Article rejected');
       fetchQueueItems();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting item:', error);
-      alert('Failed to reject item');
+      alert(`Failed to reject item: ${error.message}`);
     }
   };
 
