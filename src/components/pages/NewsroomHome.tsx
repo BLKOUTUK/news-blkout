@@ -80,14 +80,19 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* Hero Video Section */}
-      <section className="relative h-[60vh] md:h-[70vh] overflow-hidden border-b border-white/10">
+      {/* Hero Section */}
+      <section className="relative h-[60vh] md:h-[70vh] overflow-hidden border-b border-white/10 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+        {/* Background video - optional, gracefully degrades */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          onError={(e) => {
+            console.warn('Hero video failed to load');
+            e.currentTarget.style.display = 'none';
+          }}
         >
           <source src="/videos/hero/Hero4blkout(1).mp4" type="video/mp4" />
         </video>
