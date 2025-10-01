@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLKOUT Chrome Extension - Download</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+      border: 2px solid #FFD700;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #FFD700;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      color: #aaa;
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+    }
+
+    .feature-list {
+      text-align: left;
+      margin: 30px 0;
+      padding: 20px;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    .feature-list h2 {
+      color: #FFD700;
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+    }
+
+    .feature-list li {
+      margin: 10px 0;
+      padding-left: 30px;
+      position: relative;
+      color: #ddd;
+    }
+
+    .feature-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #FFD700;
+      font-weight: bold;
+    }
+
+    .download-btn {
+      display: inline-block;
+      background: #FFD700;
+      color: #000;
+      padding: 15px 40px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-decoration: none;
+      transition: all 0.3s;
+      margin: 20px 0;
+    }
+
+    .download-btn:hover {
+      background: #D4AF37;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+    }
+
+    .instructions {
+      text-align: left;
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(100, 100, 100, 0.1);
+      border-radius: 8px;
+    }
+
+    .instructions h3 {
+      color: #FFD700;
+      margin-bottom: 15px;
+    }
+
+    .instructions ol {
+      margin-left: 20px;
+    }
+
+    .instructions li {
+      margin: 10px 0;
+      color: #ccc;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #FFD700;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>BLKOUT Chrome Extension</h1>
+    <p class="subtitle">Submit news & events directly from any webpage</p>
+
+    <div class="feature-list">
+      <h2>Features</h2>
+      <ul style="list-style: none;">
+        <li>Auto-detect articles from news sites (Guardian, BBC, etc.)</li>
+        <li>Auto-detect events from Eventbrite, Facebook, Meetup</li>
+        <li>Submit to BLKOUT Newsroom with one click</li>
+        <li>Submit to Events Calendar automatically</li>
+        <li>Community moderation queue integration</li>
+      </ul>
+    </div>
+
+    <a href="/chrome-extension.zip" download class="download-btn">
+      📦 Download Extension
+    </a>
+
+    <div class="instructions">
+      <h3>Installation Instructions</h3>
+      <ol>
+        <li>Download the extension ZIP file above</li>
+        <li>Extract the ZIP to a folder on your computer</li>
+        <li>Open Chrome and go to <code>chrome://extensions/</code></li>
+        <li>Enable "Developer mode" (top right)</li>
+        <li>Click "Load unpacked" and select the extracted folder</li>
+        <li>Pin the extension to your toolbar for easy access</li>
+      </ol>
+    </div>
+
+    <a href="/" class="back-link">← Back to Newsroom</a>
+  </div>
+</body>
+</html>
