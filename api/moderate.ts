@@ -21,6 +21,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { action, itemId, item } = req.body;
 
       if (action === 'approve') {
+        // Validate and map category to allowed values
+        const allowedCategories = [
+          'liberation', 'community', 'politics', 'culture',
+          'economics', 'health', 'technology', 'opinion', 'analysis'
+        ];
+        const category = allowedCategories.includes(item.category)
+          ? item.category
+          : 'community';
+
         // Insert into news_articles
         const { error: insertError } = await supabase
           .from('news_articles')
@@ -28,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             title: item.title,
             excerpt: item.excerpt,
             content: item.excerpt || item.content || '',
-            category: item.category || 'community',
+            category: category,
             author: item.submitted_by || 'Community',
             source_url: item.url,
             source_name: 'Community Submission',
