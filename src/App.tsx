@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import NewsroomHome from './components/pages/NewsroomHome';
 import ArticleDetail from './components/pages/ArticleDetail';
@@ -12,18 +12,74 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
 
+  // URL-based routing detection
+  useEffect(() => {
+    const path = window.location.pathname;
+
+    if (path === '/admin') {
+      setCurrentPage('admin');
+    } else if (path === '/submit') {
+      setCurrentPage('submit');
+    } else if (path.startsWith('/article/')) {
+      const articleId = path.split('/article/')[1];
+      if (articleId) {
+        setSelectedArticleId(articleId);
+        setCurrentPage('article');
+      }
+    } else {
+      setCurrentPage('home');
+    }
+  }, []);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+
+      if (path === '/admin') {
+        setCurrentPage('admin');
+      } else if (path === '/submit') {
+        setCurrentPage('submit');
+      } else if (path.startsWith('/article/')) {
+        const articleId = path.split('/article/')[1];
+        if (articleId) {
+          setSelectedArticleId(articleId);
+          setCurrentPage('article');
+        }
+      } else {
+        setCurrentPage('home');
+        setSelectedArticleId(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const navigateToArticle = (articleId: string) => {
     setSelectedArticleId(articleId);
     setCurrentPage('article');
+    window.history.pushState({}, '', `/article/${articleId}`);
   };
 
   const navigateToHome = () => {
     setCurrentPage('home');
     setSelectedArticleId(null);
+    window.history.pushState({}, '', '/');
   };
 
   const navigateToPlatform = () => {
     window.location.href = 'https://blkout.vercel.app';
+  };
+
+  const navigateToSubmit = () => {
+    setCurrentPage('submit');
+    window.history.pushState({}, '', '/submit');
+  };
+
+  const navigateToAdmin = () => {
+    setCurrentPage('admin');
+    window.history.pushState({}, '', '/admin');
   };
 
   return (
@@ -51,7 +107,7 @@ function App() {
             </div>
 
             <button
-              onClick={() => setCurrentPage('submit')}
+              onClick={navigateToSubmit}
               className="px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors text-sm"
             >
               Submit Story
