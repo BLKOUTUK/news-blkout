@@ -18,7 +18,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const { action, itemId, item } = req.body;
+      const { action, itemId, item, edits } = req.body;
+
+      if (action === 'edit') {
+        // Update moderation queue item with edits
+        const { error: updateError } = await supabase
+          .from('moderation_queue')
+          .update({
+            title: edits.title || item.title,
+            excerpt: edits.excerpt || item.excerpt,
+            content: edits.content || item.content,
+            category: edits.category || item.category,
+            url: edits.url || item.url,
+            content_data: {
+              ...item.content_data,
+              edited: {
+                ...item.content_data?.edited,
+                ...edits,
+              },
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', itemId);
+
+        if (updateError) {
+          console.error('Edit error:', updateError);
+          return res.status(500).json({
+            success: false,
+            error: updateError.message,
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Article updated successfully',
+        });
+      }
 
       if (action === 'approve') {
         // Validate and map category to allowed values
@@ -80,26 +115,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'reject') {
-        const { error } = await supabase
-          .from('moderation_queue')
+        // Update news_articles status to rejected (keep in database)
+        const { error: updateArticleError } = await supabase
+          .from('news_articles')
           .update({
             status: 'rejected',
-            reviewed_at: new Date().toISOString(),
-            review_notes: 'Rejected by moderator',
+            published: false,
+            updated_at: new Date().toISOString(),
           })
+          .eq('id', item.content_data?.article_id);
+
+        if (updateArticleError) {
+          console.warn('Failed to update article status:', updateArticleError);
+        }
+
+        // Delete from moderation queue (remove from queue)
+        const { error: deleteError } = await supabase
+          .from('moderation_queue')
+          .delete()
           .eq('id', itemId);
 
-        if (error) {
-          console.error('Reject error:', error);
+        if (deleteError) {
+          console.error('Delete error:', deleteError);
           return res.status(500).json({
             success: false,
-            error: error.message,
+            error: deleteError.message,
           });
         }
 
         return res.status(200).json({
           success: true,
-          message: 'Article rejected',
+          message: 'Article rejected and removed from queue',
         });
       }
 
