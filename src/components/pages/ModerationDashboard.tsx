@@ -30,6 +30,7 @@ const ModerationDashboard: React.FC = () => {
       let query = supabase
         .from('moderation_queue')
         .select('*')
+        .eq('type', 'news') // Only show news items
         .order('submitted_at', { ascending: false });
 
       if (filter !== 'all') {
