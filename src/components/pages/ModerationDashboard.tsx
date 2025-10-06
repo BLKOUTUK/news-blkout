@@ -117,13 +117,12 @@ const ModerationDashboard: React.FC = () => {
 
             {/* Chrome Extension Download */}
             <a
-              href="/extension-download.html"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="https://blkout.vercel.app/extensions/blkout-news-curator-v1.0.0.zip"
+              download="blkout-news-curator-v1.0.0.zip"
               className="flex items-center gap-2 px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors"
             >
               <Download className="w-4 h-4" />
-              Get Extension
+              Download News Curator
             </a>
           </div>
 
@@ -134,17 +133,16 @@ const ModerationDashboard: React.FC = () => {
                 <Download className="w-5 h-5 text-liberation-gold-divine" />
               </div>
               <div>
-                <h3 className="font-semibold text-white mb-1">Chrome Extension for Moderators</h3>
+                <h3 className="font-semibold text-white mb-1">News Curator Chrome Extension</h3>
                 <p className="text-sm text-gray-400 mb-2">
-                  Submit articles and events directly from any webpage. Auto-detects content from news sites and event platforms.
+                  Submit news articles directly from any webpage. Auto-extracts article data from news sites with intelligent content detection and content warning systems.
                 </p>
                 <a
-                  href="/extension-download.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="https://blkout.vercel.app/extensions/blkout-news-curator-v1.0.0.zip"
+                  download="blkout-news-curator-v1.0.0.zip"
                   className="text-sm text-liberation-gold-divine hover:underline inline-flex items-center gap-1"
                 >
-                  Download & Installation Instructions <ExternalLink className="w-3 h-3" />
+                  Download Extension v1.0.0 <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
             </div>
