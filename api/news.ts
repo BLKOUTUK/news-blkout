@@ -34,7 +34,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Sort
       if (sortBy === 'interest') {
-        query = query.order('interest_score', { ascending: false })
+        // After first week, prioritize articles by total votes then interest score
+        // For articles published more than 7 days ago, votes matter most
+        query = query.order('total_votes', { ascending: false })
+                     .order('interest_score', { ascending: false })
                      .order('published_at', { ascending: false });
       } else if (sortBy === 'weekly') {
         query = query.order('is_story_of_week', { ascending: false })
