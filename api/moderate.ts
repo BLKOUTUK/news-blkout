@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,24 +21,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { action, itemId, item, edits } = req.body;
 
       if (action === 'edit') {
+        // Build update object with only defined fields
+        const updateData: any = {
+          updated_at: new Date().toISOString(),
+        };
+
+        if (edits.title !== undefined) updateData.title = edits.title;
+        if (edits.excerpt !== undefined) updateData.excerpt = edits.excerpt;
+        if (edits.content !== undefined) updateData.content = edits.content;
+        if (edits.category !== undefined) updateData.category = edits.category;
+        if (edits.url !== undefined) updateData.url = edits.url;
+
+        // Preserve and merge content_data
+        if (item.content_data) {
+          updateData.content_data = {
+            ...item.content_data,
+            edited: {
+              ...item.content_data?.edited,
+              ...edits,
+            },
+          };
+        }
+
+        console.log('Updating moderation queue item:', itemId, updateData);
+
         // Update moderation queue item with edits
         const { error: updateError } = await supabase
           .from('moderation_queue')
-          .update({
-            title: edits.title || item.title,
-            excerpt: edits.excerpt || item.excerpt,
-            content: edits.content || item.content,
-            category: edits.category || item.category,
-            url: edits.url || item.url,
-            content_data: {
-              ...item.content_data,
-              edited: {
-                ...item.content_data?.edited,
-                ...edits,
-              },
-            },
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', itemId);
 
         if (updateError) {
