@@ -169,12 +169,12 @@ const ModerationDashboard: React.FC = () => {
 
             {/* Chrome Extension Download */}
             <a
-              href="https://blkout.vercel.app/extensions/blkout-news-curator-v1.0.1.zip"
-              download="blkout-news-curator-v1.0.1.zip"
+              href="/extensions/blkout-news-curator-v1.0.2.zip"
+              download="blkout-news-curator-v1.0.2.zip"
               className="flex items-center gap-2 px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors"
             >
               <Download className="w-4 h-4" />
-              Download News Curator
+              Download News Curator v1.0.2
             </a>
           </div>
 
@@ -190,11 +190,11 @@ const ModerationDashboard: React.FC = () => {
                   Submit news articles directly from any webpage. Auto-extracts article data from news sites with intelligent content detection and content warning systems.
                 </p>
                 <a
-                  href="https://blkout.vercel.app/extensions/blkout-news-curator-v1.0.1.zip"
-                  download="blkout-news-curator-v1.0.1.zip"
+                  href="/extensions/blkout-news-curator-v1.0.2.zip"
+                  download="blkout-news-curator-v1.0.2.zip"
                   className="text-sm text-liberation-gold-divine hover:underline inline-flex items-center gap-1"
                 >
-                  Download Extension v1.0.1 <ExternalLink className="w-3 h-3" />
+                  Download Extension v1.0.2 <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
             </div>
