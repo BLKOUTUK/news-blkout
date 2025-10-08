@@ -31,19 +31,40 @@ const ModerationDashboard: React.FC = () => {
     setLoading(true);
     try {
       let query = supabase
-        .from('moderation_queue')
-        .select('*')
-        .eq('type', 'news') // Only show news items
-        .order('submitted_at', { ascending: false });
+        .from('newsroom_articles')
+        .select('id, title, original_url, excerpt, content, category, moderation_status, published_at, author, total_votes')
+        .order('published_at', { ascending: false });
 
+      // Map filter to moderation_status
       if (filter !== 'all') {
-        query = query.eq('status', filter);
+        const statusMap: Record<string, string> = {
+          'pending': 'pending',
+          'approved': 'approved',
+          'rejected': 'rejected'
+        };
+        query = query.eq('moderation_status', statusMap[filter]);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setQueueItems(data || []);
+
+      // Map newsroom_articles to QueueItem format
+      const mappedItems: QueueItem[] = (data || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        url: article.original_url || '',
+        excerpt: article.excerpt || '',
+        content: article.content || '',
+        category: article.category,
+        status: article.moderation_status,
+        type: 'news',
+        submitted_at: article.published_at,
+        submitted_by: article.author,
+        votes: article.total_votes || 0
+      }));
+
+      setQueueItems(mappedItems);
     } catch (error) {
       console.error('Error fetching queue:', error);
     } finally {

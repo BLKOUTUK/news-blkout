@@ -30,24 +30,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (edits.excerpt !== undefined) updateData.excerpt = edits.excerpt;
         if (edits.content !== undefined) updateData.content = edits.content;
         if (edits.category !== undefined) updateData.category = edits.category;
-        if (edits.url !== undefined) updateData.url = edits.url;
+        if (edits.url !== undefined) updateData.original_url = edits.url;
 
-        // Preserve and merge content_data
-        if (item.content_data) {
-          updateData.content_data = {
-            ...item.content_data,
-            edited: {
-              ...item.content_data?.edited,
-              ...edits,
-            },
-          };
-        }
+        console.log('Updating newsroom article:', itemId, updateData);
 
-        console.log('Updating moderation queue item:', itemId, updateData);
-
-        // Update moderation queue item with edits
+        // Update newsroom_articles with edits
         const { error: updateError } = await supabase
-          .from('moderation_queue')
+          .from('newsroom_articles')
           .update(updateData)
           .eq('id', itemId);
 
@@ -66,52 +55,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'approve') {
-        // Validate and map category to allowed values
-        const allowedCategories = [
-          'liberation', 'community', 'politics', 'culture',
-          'economics', 'health', 'technology', 'opinion', 'analysis'
-        ];
-        const category = allowedCategories.includes(item.category)
-          ? item.category
-          : 'community';
-
-        // Insert into news_articles
-        const { error: insertError } = await supabase
-          .from('news_articles')
-          .insert([{
-            title: item.title,
-            excerpt: item.excerpt,
-            content: item.excerpt || item.content || '',
-            category: category,
-            author: item.submitted_by || 'Community',
-            source_url: item.url,
-            source_name: 'Community Submission',
-            status: 'published',
-            published: true,
-            published_at: new Date().toISOString(),
-            interest_score: item.votes || 0,
-            total_votes: item.votes || 0,
-          }]);
-
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          return res.status(500).json({
-            success: false,
-            error: insertError.message,
-          });
-        }
-
-        // Update moderation queue
+        // Update newsroom_articles to approved and published status
         const { error: updateError } = await supabase
-          .from('moderation_queue')
+          .from('newsroom_articles')
           .update({
-            status: 'approved',
-            reviewed_at: new Date().toISOString(),
+            moderation_status: 'approved',
+            status: 'published',
+            updated_at: new Date().toISOString(),
           })
           .eq('id', itemId);
 
         if (updateError) {
-          console.error('Update error:', updateError);
+          console.error('Approve error:', updateError);
           return res.status(500).json({
             success: false,
             error: updateError.message,
@@ -125,37 +80,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'reject') {
-        // Update news_articles status to rejected (keep in database)
-        const { error: updateArticleError } = await supabase
-          .from('news_articles')
+        // Update newsroom_articles to rejected status (keep in database for audit)
+        const { error: updateError } = await supabase
+          .from('newsroom_articles')
           .update({
-            status: 'rejected',
-            published: false,
+            moderation_status: 'rejected',
+            status: 'archived',
             updated_at: new Date().toISOString(),
           })
-          .eq('id', item.content_data?.article_id);
-
-        if (updateArticleError) {
-          console.warn('Failed to update article status:', updateArticleError);
-        }
-
-        // Delete from moderation queue (remove from queue)
-        const { error: deleteError } = await supabase
-          .from('moderation_queue')
-          .delete()
           .eq('id', itemId);
 
-        if (deleteError) {
-          console.error('Delete error:', deleteError);
+        if (updateError) {
+          console.error('Reject error:', updateError);
           return res.status(500).json({
             success: false,
-            error: deleteError.message,
+            error: updateError.message,
           });
         }
 
         return res.status(200).json({
           success: true,
-          message: 'Article rejected and removed from queue',
+          message: 'Article rejected and archived',
         });
       }
 
