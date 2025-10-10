@@ -105,10 +105,10 @@ function App() {
               />
               <div className="text-left">
                 <h1 className="text-lg md:text-xl font-black leading-tight">
-                  <span className="text-liberation-gold-divine">NEWSROOM</span>
+                  <span className="text-liberation-gold-divine">NEWS THAT MATTERS</span>
                 </h1>
                 <p className="text-xs text-gray-400 hidden md:block">
-                  Community-Curated Liberation News
+                  News reports and analysis through a Black Queer lens
                 </p>
               </div>
             </div>
