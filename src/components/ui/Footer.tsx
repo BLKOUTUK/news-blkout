@@ -57,6 +57,12 @@ const Footer: React.FC = () => {
                   Community Standards
                 </button>
               </li>
+              <li>
+                <a href="https://voices-blkout.up.railway.app" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-liberation-gold-divine transition-colors flex items-center gap-1">
+                  BLKOUT Voices
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </li>
             </ul>
           </div>
 
