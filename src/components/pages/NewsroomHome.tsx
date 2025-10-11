@@ -131,6 +131,44 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
         </div>
       </section>
 
+      {/* How It Works Info Box */}
+      <section className="py-8 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-gradient-to-r from-liberation-sovereignty-gold/10 via-liberation-pride-purple/10 to-liberation-sovereignty-gold/10 border border-liberation-sovereignty-gold/30 rounded-xl p-6 md:p-8">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-liberation-sovereignty-gold/20 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-liberation-sovereignty-gold" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-3">
+                  Democratic News Curation - Your Vote Matters
+                </h3>
+                <p className="text-gray-300 mb-4 leading-relaxed">
+                  <strong className="text-liberation-sovereignty-gold">Upvote stories</strong> you find important to help identify the most relevant news for our community.
+                  Each week, the story with the most votes becomes our <strong className="text-liberation-sovereignty-gold">Story of the Week</strong>.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
+                  <div className="flex items-start gap-2">
+                    <Crown className="h-5 w-5 text-liberation-sovereignty-gold flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-white">Story of the Week:</strong> Top-voted article gets featured placement
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Zap className="h-5 w-5 text-liberation-pride-purple flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-white">Community Power:</strong> Your votes shape what news matters to us
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Main Content */}
       <main className="py-12 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
