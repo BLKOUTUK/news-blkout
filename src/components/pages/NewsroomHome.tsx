@@ -134,18 +134,18 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
       {/* How It Works Info Box */}
       <section className="py-8 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-gradient-to-r from-liberation-sovereignty-gold/10 via-liberation-pride-purple/10 to-liberation-sovereignty-gold/10 border border-liberation-sovereignty-gold/30 rounded-xl p-6 md:p-8">
-            <div className="flex items-start gap-4">
+          <div className="bg-gradient-to-r from-liberation-sovereignty-gold/10 via-liberation-pride-purple/10 to-liberation-sovereignty-gold/10 border border-liberation-sovereignty-gold/30 rounded-xl p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-liberation-sovereignty-gold/20 rounded-xl flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-liberation-sovereignty-gold" />
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">
                   Democratic News Curation - Your Vote Matters
                 </h3>
-                <p className="text-gray-300 mb-4 leading-relaxed">
+                <p className="text-gray-300 mb-4 leading-relaxed text-sm sm:text-base">
                   <strong className="text-liberation-sovereignty-gold">Upvote stories</strong> you find important to help identify the most relevant news for our community.
                   Each week, the story with the most votes becomes our <strong className="text-liberation-sovereignty-gold">Story of the Week</strong>.
                 </p>
@@ -216,7 +216,7 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                         />
                       </div>
                     )}
-                    <div className="p-8">
+                    <div className="p-4 sm:p-6 md:p-8">
                       <div className="flex items-center gap-3 mb-4">
                         <span className="text-xs bg-liberation-sovereignty-gold text-black px-3 py-1 rounded-full font-semibold">
                           {featuredArticle.category.toUpperCase()}
@@ -227,15 +227,15 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                         </div>
                       </div>
 
-                      <h3 className="text-3xl font-bold text-white mb-4 leading-tight group-hover:text-liberation-sovereignty-gold transition-colors">
+                      <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight group-hover:text-liberation-sovereignty-gold transition-colors">
                         {featuredArticle.title}
                       </h3>
 
-                      <p className="text-gray-300 text-lg leading-relaxed mb-6">
+                      <p className="text-gray-300 text-base sm:text-lg leading-relaxed mb-6">
                         {featuredArticle.excerpt}
                       </p>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <span>By {featuredArticle.author}</span>
                           <span>•</span>
@@ -280,17 +280,17 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
       {/* Call to Action */}
       <section className="py-16 px-4 md:px-8 border-t border-white/10">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">
             Shape Our <span className="text-liberation-sovereignty-gold">Shared News Agenda</span>
           </h2>
-          <p className="text-xl text-gray-400 mb-8">
+          <p className="text-lg sm:text-xl text-gray-400 mb-8">
             Phase 1: Community curation builds the foundation for IVOR's autonomous story discovery.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold/90 text-black py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105">
+            <button className="bg-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold/90 text-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-base sm:text-lg transition-all duration-300 hover:scale-105">
               Get Curator Extension
             </button>
-            <button className="bg-transparent border-2 border-liberation-sovereignty-gold text-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold hover:text-black py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300">
+            <button className="bg-transparent border-2 border-liberation-sovereignty-gold text-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold hover:text-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-base sm:text-lg transition-all duration-300">
               Curation Guidelines
             </button>
           </div>
