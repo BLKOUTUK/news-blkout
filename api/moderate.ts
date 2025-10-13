@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (edits.excerpt !== undefined) updateData.excerpt = edits.excerpt;
         if (edits.content !== undefined) updateData.content = edits.content;
         if (edits.category !== undefined) updateData.category = edits.category;
-        if (edits.url !== undefined) updateData.original_url = edits.url;
+        if (edits.url !== undefined) updateData.source_url = edits.url;
 
         console.log('Updating newsroom article:', itemId, updateData);
 
@@ -55,12 +55,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'approve') {
-        // Update news_articles to approved and published status
+        // Update news_articles to published status
         const { error: updateError } = await supabase
           .from('news_articles')
           .update({
-            moderation_status: 'approved',
             status: 'published',
+            published: true,
+            published_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('id', itemId);
@@ -80,12 +81,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'reject') {
-        // Update news_articles to rejected status (keep in database for audit)
+        // Update news_articles to archived status (keep in database for audit)
         const { error: updateError } = await supabase
           .from('news_articles')
           .update({
-            moderation_status: 'rejected',
             status: 'archived',
+            published: false,
             updated_at: new Date().toISOString(),
           })
           .eq('id', itemId);

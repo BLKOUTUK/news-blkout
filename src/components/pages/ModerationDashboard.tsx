@@ -32,17 +32,17 @@ const ModerationDashboard: React.FC = () => {
     try {
       let query = supabase
         .from('news_articles')
-        .select('id, title, original_url, excerpt, content, category, moderation_status, published_at, author, total_votes')
-        .order('published_at', { ascending: false });
+        .select('id, title, source_url, excerpt, content, category, status, published_at, author, total_votes')
+        .order('created_at', { ascending: false });
 
-      // Map filter to moderation_status
+      // Map filter to status field
       if (filter !== 'all') {
         const statusMap: Record<string, string> = {
-          'pending': 'pending',
-          'approved': 'approved',
-          'rejected': 'rejected'
+          'pending': 'review',      // review status = pending moderation
+          'approved': 'published',  // published status = approved
+          'rejected': 'archived'    // archived status = rejected
         };
-        query = query.eq('moderation_status', statusMap[filter]);
+        query = query.eq('status', statusMap[filter]);
       }
 
       const { data, error } = await query;
@@ -50,19 +50,27 @@ const ModerationDashboard: React.FC = () => {
       if (error) throw error;
 
       // Map news_articles to QueueItem format
-      const mappedItems: QueueItem[] = (data || []).map(article => ({
-        id: article.id,
-        title: article.title,
-        url: article.original_url || '',
-        excerpt: article.excerpt || '',
-        content: article.content || '',
-        category: article.category,
-        status: article.moderation_status,
-        type: 'news',
-        submitted_at: article.published_at,
-        submitted_by: article.author,
-        votes: article.total_votes || 0
-      }));
+      const mappedItems: QueueItem[] = (data || []).map(article => {
+        // Map database status back to UI status
+        let uiStatus = 'pending';
+        if (article.status === 'published') uiStatus = 'approved';
+        else if (article.status === 'archived') uiStatus = 'rejected';
+        else if (article.status === 'review') uiStatus = 'pending';
+
+        return {
+          id: article.id,
+          title: article.title,
+          url: article.source_url || '',
+          excerpt: article.excerpt || '',
+          content: article.content || '',
+          category: article.category,
+          status: uiStatus,
+          type: 'news',
+          submitted_at: article.published_at || article.created_at,
+          submitted_by: article.author,
+          votes: article.total_votes || 0
+        };
+      });
 
       setQueueItems(mappedItems);
     } catch (error) {

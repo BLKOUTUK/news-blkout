@@ -37,22 +37,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Submit to news_articles with pending moderation status
+      // Submit to news_articles with review status (awaiting moderation)
       const { data, error } = await supabase
         .from('news_articles')
         .insert([
           {
             title,
-            original_url: url,
-            excerpt: excerpt || '',
+            source_url: url, // Maps to source_url in schema
+            excerpt: excerpt || 'No excerpt provided',
             category: category || 'community',
-            content: content || '',
+            content: content || 'Content pending moderation',
             author: submittedBy,
             read_time: '5 min read', // Default read time, can be calculated later
-            status: 'draft', // Set to draft until approved
-            moderation_status: 'pending', // Pending moderator approval
-            published_at: new Date().toISOString(),
-            submitted_at: new Date().toISOString(),
+            status: 'review', // Set to review status for moderator approval
+            published: false, // Not published until approved
+            // published_at will be set when approved, not on submission
           },
         ])
         .select()
