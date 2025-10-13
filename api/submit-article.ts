@@ -36,22 +36,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Submit to moderation queue
+      // Submit to newsroom_articles with pending moderation status
       const { data, error } = await supabase
-        .from('moderation_queue')
+        .from('newsroom_articles')
         .insert([
           {
             title,
-            url,
+            original_url: url,
             excerpt: excerpt || '',
             category: category || 'community',
             content: content || '',
-            type,
-            status: 'pending',
-            submitted_by: submittedBy,
+            author: submittedBy,
+            read_time: '5 min read', // Default read time, can be calculated later
+            status: 'draft', // Set to draft until approved
+            moderation_status: 'pending', // Pending moderator approval
+            published_at: new Date().toISOString(),
             submitted_at: new Date().toISOString(),
-            votes: 0,
-            priority: 'medium',
           },
         ])
         .select()
