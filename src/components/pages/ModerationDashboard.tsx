@@ -188,37 +188,63 @@ const ModerationDashboard: React.FC = () => {
               <p className="text-gray-400">Review and approve community submissions</p>
             </div>
 
-            {/* Chrome Extension Download */}
+            {/* Chrome Extension Download - v2.2.0 */}
             <a
-              href="/downloads/blkout-news-curator-v2.1.tar.gz"
-              download="blkout-news-curator-v2.1.tar.gz"
+              href="/blkout-moderator-tools-v2.2.0.zip"
+              download="blkout-moderator-tools-v2.2.0.zip"
               className="flex items-center gap-2 px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors"
             >
               <Download className="w-4 h-4" />
-              Download Extension v2.1
+              Download Extension v2.2.0
             </a>
           </div>
 
-          {/* Extension Info Banner */}
+          {/* Extension Info Banner - v2.2.0 */}
           <div className="mt-4 p-4 bg-gray-800/50 border border-liberation-gold-divine/20 rounded-lg">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-liberation-gold-divine/20 rounded-md">
                 <Download className="w-5 h-5 text-liberation-gold-divine" />
               </div>
-              <div>
-                <h3 className="font-semibold text-white mb-1">News Curator Chrome Extension v2.1</h3>
+              <div className="flex-1">
+                <h3 className="font-semibold text-white mb-1">BLKOUT Moderator Tools Extension v2.2.0</h3>
                 <p className="text-sm text-gray-400 mb-2">
-                  Submit news articles directly from any webpage to this moderation dashboard. Auto-extracts article data from news sites with intelligent content detection and content warning systems.
+                  <strong className="text-liberation-gold-divine">🚀 NEW: Dual-platform support!</strong> Submit news articles AND events directly from any webpage.
                 </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  <div className="flex items-center text-xs text-gray-300">
+                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Event-specific fields (date, location, capacity)
+                  </div>
+                  <div className="flex items-center text-xs text-gray-300">
+                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Smart content type detection
+                  </div>
+                  <div className="flex items-center text-xs text-gray-300">
+                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Intelligent API routing (news/events)
+                  </div>
+                  <div className="flex items-center text-xs text-gray-300">
+                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Auto-extraction with content warnings
+                  </div>
+                </div>
                 <a
-                  href="/downloads/blkout-news-curator-v2.1.tar.gz"
-                  download="blkout-news-curator-v2.1.tar.gz"
-                  className="text-sm text-liberation-gold-divine hover:underline inline-flex items-center gap-1"
+                  href="/blkout-moderator-tools-v2.2.0.zip"
+                  download="blkout-moderator-tools-v2.2.0.zip"
+                  className="text-sm text-liberation-gold-divine hover:underline inline-flex items-center gap-1 font-medium"
                 >
-                  Download Extension v2.1 <ExternalLink className="w-3 h-3" />
+                  Download Extension v2.2.0 <ExternalLink className="w-3 h-3" />
                 </a>
                 <p className="text-xs text-gray-500 mt-2">
-                  Extract with: tar -xzf blkout-news-curator-v2.1.tar.gz
+                  Installation: Extract ZIP → chrome://extensions → Enable Developer mode → Load unpacked
                 </p>
               </div>
             </div>
