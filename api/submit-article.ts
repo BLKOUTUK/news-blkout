@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_ANON_KEY || ''
-);
+// Use VITE_ prefixed env vars for consistency
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -59,9 +60,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) {
         console.error('Supabase error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Supabase URL configured:', !!supabaseUrl);
+        console.error('Supabase Key configured:', !!supabaseKey);
         return res.status(500).json({
           success: false,
-          error: 'Failed to submit article',
+          error: `Failed to submit article: ${error.message || 'Unknown error'}`,
+          details: error.hint || error.details || 'No additional details'
         });
       }
 
