@@ -34,9 +34,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         console.log('Updating newsroom article:', itemId, updateData);
 
-        // Update newsroom_articles with edits
+        // Update news_articles with edits
         const { error: updateError } = await supabase
-          .from('newsroom_articles')
+          .from('news_articles')
           .update(updateData)
           .eq('id', itemId);
 
@@ -55,9 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'approve') {
-        // Update newsroom_articles to approved and published status
+        // Update news_articles to approved and published status
         const { error: updateError } = await supabase
-          .from('newsroom_articles')
+          .from('news_articles')
           .update({
             moderation_status: 'approved',
             status: 'published',
@@ -80,9 +80,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (action === 'reject') {
-        // Update newsroom_articles to rejected status (keep in database for audit)
+        // Update news_articles to rejected status (keep in database for audit)
         const { error: updateError } = await supabase
-          .from('newsroom_articles')
+          .from('news_articles')
           .update({
             moderation_status: 'rejected',
             status: 'archived',

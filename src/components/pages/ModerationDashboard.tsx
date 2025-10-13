@@ -31,7 +31,7 @@ const ModerationDashboard: React.FC = () => {
     setLoading(true);
     try {
       let query = supabase
-        .from('newsroom_articles')
+        .from('news_articles')
         .select('id, title, original_url, excerpt, content, category, moderation_status, published_at, author, total_votes')
         .order('published_at', { ascending: false });
 
@@ -49,7 +49,7 @@ const ModerationDashboard: React.FC = () => {
 
       if (error) throw error;
 
-      // Map newsroom_articles to QueueItem format
+      // Map news_articles to QueueItem format
       const mappedItems: QueueItem[] = (data || []).map(article => ({
         id: article.id,
         title: article.title,

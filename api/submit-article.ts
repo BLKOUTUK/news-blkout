@@ -37,9 +37,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Submit to newsroom_articles with pending moderation status
+      // Submit to news_articles with pending moderation status
       const { data, error } = await supabase
-        .from('newsroom_articles')
+        .from('news_articles')
         .insert([
           {
             title,
