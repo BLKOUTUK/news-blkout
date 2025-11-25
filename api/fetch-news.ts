@@ -62,10 +62,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // For POST requests, verify authorization (cron secret or manual trigger)
+  if (req.method === 'POST') {
+    const authHeader = req.headers['authorization'];
+    const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
+    const isAuthorized =
+      !process.env.CRON_SECRET || // Allow if no secret set
+      authHeader === expectedSecret ||
+      req.query.manual === 'true'; // Allow manual testing
+
+    if (!isAuthorized) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
   }
 
   const preview = req.query.preview === 'true';

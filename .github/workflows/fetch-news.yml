@@ -17,7 +17,7 @@ jobs:
           response=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://news-blkout.vercel.app/api/cron/fetch-news")
+            "https://news-blkout.vercel.app/api/fetch-news")
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
