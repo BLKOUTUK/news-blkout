@@ -1,0 +1,33 @@
+name: Fetch News
+
+on:
+  schedule:
+    # Run every 6 hours at minute 0
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger News Fetch
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://news-blkout.vercel.app/api/cron/fetch-news")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response: $body"
+          echo "HTTP Status: $http_code"
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "Failed to fetch news"
+            exit 1
+          fi
+
+          echo "News fetch completed successfully"
