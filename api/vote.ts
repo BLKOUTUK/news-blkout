@@ -1,10 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ''
 );
+
+/**
+ * Generate anonymous voter ID from IP + User-Agent
+ * This allows vote tracking without requiring authentication
+ */
+function generateVoterId(req: VercelRequest): string {
+  const ip = req.headers['x-forwarded-for'] ||
+             req.headers['x-real-ip'] ||
+             req.socket?.remoteAddress ||
+             'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+
+  // Hash IP + User-Agent for privacy
+  const hash = crypto
+    .createHash('sha256')
+    .update(`${ip}:${userAgent}`)
+    .digest('hex')
+    .substring(0, 32);
+
+  return `anon_${hash}`;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -20,9 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const { articleId } = req.body;
 
-      // Get authorization header
-      const authHeader = req.headers.authorization;
-
       if (!articleId) {
         return res.status(400).json({
           success: false,
@@ -30,29 +49,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Check authentication
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication required',
-          message: 'Please log in to upvote articles',
-        });
+      // Check for authenticated user first
+      const authHeader = req.headers.authorization;
+      let voterId: string;
+      let isAuthenticated = false;
+
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+
+        if (user) {
+          voterId = user.id;
+          isAuthenticated = true;
+        } else {
+          // Fall back to anonymous voting
+          voterId = generateVoterId(req);
+        }
+      } else {
+        // Anonymous voting
+        voterId = generateVoterId(req);
       }
-
-      const token = authHeader.replace('Bearer ', '');
-
-      // Verify token and get user
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-      if (authError || !user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid authentication',
-          message: 'Please log in to upvote articles',
-        });
-      }
-
-      const userId = user.id;
 
       // Verify article exists
       const { data: article, error: fetchError } = await supabase
@@ -68,12 +84,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Check if user has already upvoted
+      // Check if voter has already upvoted (use voter_id column for anon votes)
       const { data: existingVote, error: voteCheckError } = await supabase
         .from('news_votes')
         .select('id')
         .eq('article_id', articleId)
-        .eq('user_id', userId)
+        .eq('voter_id', voterId)
         .maybeSingle();
 
       if (voteCheckError) {
@@ -90,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .from('news_votes')
           .delete()
           .eq('article_id', articleId)
-          .eq('user_id', userId);
+          .eq('voter_id', voterId);
 
         if (deleteError) {
           console.error('Error removing upvote:', deleteError);
@@ -124,7 +140,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .from('news_votes')
           .insert({
             article_id: articleId,
-            user_id: userId,
+            voter_id: voterId,
+            user_id: isAuthenticated ? voterId : null,
           });
 
         if (insertError) {

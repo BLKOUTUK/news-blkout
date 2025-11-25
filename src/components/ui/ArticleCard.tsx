@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Clock, ExternalLink, ThumbsUp, LogIn } from 'lucide-react';
+import { TrendingUp, Clock, ExternalLink, ThumbsUp } from 'lucide-react';
 import type { NewsArticle } from '@/types/newsroom';
 import { formatRelativeTime } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -7,77 +7,31 @@ import ShareButtons from './ShareButtons';
 
 interface ArticleCardProps {
   article: NewsArticle;
-  onClick?: () => void; // Made optional since we'll handle clicks internally
+  onClick?: () => void;
 }
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
   const [upvoteCount, setUpvoteCount] = useState(article.totalVotes || 0);
   const [hasUpvoted, setHasUpvoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Check authentication status and vote status
+  // Check vote status on mount using localStorage
   useEffect(() => {
-    checkAuthAndVoteStatus();
+    const votedArticles = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
+    setHasUpvoted(votedArticles.includes(article.id));
   }, [article.id]);
 
-  const checkAuthAndVoteStatus = async () => {
-    try {
-      // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        setIsAuthenticated(false);
-        setHasUpvoted(false);
-        setIsCheckingAuth(false);
-        return;
-      }
-
-      setIsAuthenticated(true);
-
-      // Check if user has upvoted this article
-      const token = session.access_token;
-      const response = await fetch(`/api/user-vote?articleId=${article.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setHasUpvoted(data.data?.hasUpvoted || false);
-      }
-    } catch (error) {
-      console.error('Error checking auth/vote status:', error);
-    } finally {
-      setIsCheckingAuth(false);
-    }
-  };
-
   const handleVote = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent article navigation
+    e.stopPropagation();
 
     if (isVoting) return;
-
-    // Check authentication
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      // User not authenticated - prompt to log in
-      alert('Please log in to upvote articles. You can sign in with your BLKOUT account.');
-      return;
-    }
-
     setIsVoting(true);
 
     try {
-      const token = session.access_token;
       const response = await fetch('/api/vote', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ articleId: article.id }),
       });
@@ -86,29 +40,35 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
         const data = await response.json();
 
         if (data.success) {
-          // Update UI based on action
+          // Update UI
           setHasUpvoted(data.data.hasUpvoted);
           setUpvoteCount(data.data.upvoteCount);
+
+          // Update localStorage to remember vote
+          const votedArticles = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
+          if (data.data.hasUpvoted) {
+            if (!votedArticles.includes(article.id)) {
+              votedArticles.push(article.id);
+            }
+          } else {
+            const index = votedArticles.indexOf(article.id);
+            if (index > -1) {
+              votedArticles.splice(index, 1);
+            }
+          }
+          localStorage.setItem('blkout_voted_articles', JSON.stringify(votedArticles));
         }
-      } else if (response.status === 401) {
-        // Auth failed
-        alert('Your session has expired. Please log in again to upvote articles.');
       } else {
-        // Other error
-        const errorData = await response.json();
-        console.error('Vote error:', errorData);
-        alert('Failed to record upvote. Please try again.');
+        console.error('Vote error:', await response.json());
       }
     } catch (error) {
       console.error('Error voting:', error);
-      alert('Failed to record upvote. Please check your connection and try again.');
     } finally {
       setIsVoting(false);
     }
   };
 
   const handleCardClick = async (e: React.MouseEvent) => {
-    // Don't trigger if clicking on interactive elements
     const target = e.target as HTMLElement;
     if (target.closest('button, a, [data-no-propagate]')) {
       return;
@@ -121,16 +81,12 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
     if (article.sourceUrl) {
       window.open(article.sourceUrl, '_blank', 'noopener,noreferrer');
     } else {
-      console.warn('No source URL for article:', article.id);
-      // Fallback to onClick prop if provided
       onClick?.();
     }
   };
 
-  // Analytics tracking function
   const trackArticleClick = async (articleId: string, sourceName: string) => {
     try {
-      // Track in analytics table
       await supabase.from('newsroom_analytics').insert({
         article_id: articleId,
         event_type: 'click',
@@ -140,8 +96,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
         },
       });
     } catch (error) {
-      console.error('Failed to track click:', error);
-      // Non-blocking - don't prevent navigation
+      // Non-blocking
     }
   };
 
@@ -215,40 +170,20 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
               />
             )}
 
-            {/* Upvote button */}
-            {isCheckingAuth ? (
-              <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-gray-500">
-                <ThumbsUp className="h-4 w-4 animate-pulse" />
-                <span>{upvoteCount}</span>
-              </div>
-            ) : !isAuthenticated ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  alert('Please log in to upvote articles');
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-white/5 text-gray-400 hover:bg-liberation-sovereignty-gold/10 hover:text-liberation-sovereignty-gold transition-all"
-                title="Log in to upvote"
-              >
-                <LogIn className="h-3 w-3" />
-                <ThumbsUp className="h-4 w-4" />
-                <span>{upvoteCount}</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleVote}
-                disabled={isVoting}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  hasUpvoted
-                    ? 'bg-liberation-sovereignty-gold/20 text-liberation-sovereignty-gold'
-                    : 'bg-white/5 text-gray-400 hover:bg-liberation-sovereignty-gold/10 hover:text-liberation-sovereignty-gold'
-                } ${isVoting ? 'opacity-50 cursor-wait' : ''}`}
-                title={hasUpvoted ? 'Remove upvote' : 'Upvote this story'}
-              >
-                <ThumbsUp className={`h-4 w-4 ${hasUpvoted ? 'fill-current' : ''} ${isVoting ? 'animate-pulse' : ''}`} />
-                <span>{upvoteCount}</span>
-              </button>
-            )}
+            {/* Upvote button - always enabled for anonymous voting */}
+            <button
+              onClick={handleVote}
+              disabled={isVoting}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                hasUpvoted
+                  ? 'bg-liberation-sovereignty-gold/20 text-liberation-sovereignty-gold'
+                  : 'bg-white/5 text-gray-400 hover:bg-liberation-sovereignty-gold/10 hover:text-liberation-sovereignty-gold'
+              } ${isVoting ? 'opacity-50 cursor-wait' : ''}`}
+              title={hasUpvoted ? 'Remove upvote' : 'Upvote this story'}
+            >
+              <ThumbsUp className={`h-4 w-4 ${hasUpvoted ? 'fill-current' : ''} ${isVoting ? 'animate-pulse' : ''}`} />
+              <span>{upvoteCount}</span>
+            </button>
           </div>
         </div>
 

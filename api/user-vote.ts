@@ -1,14 +1,35 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ''
 );
 
 /**
+ * Generate anonymous voter ID from IP + User-Agent
+ */
+function generateVoterId(req: VercelRequest): string {
+  const ip = req.headers['x-forwarded-for'] ||
+             req.headers['x-real-ip'] ||
+             req.socket?.remoteAddress ||
+             'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+
+  const hash = crypto
+    .createHash('sha256')
+    .update(`${ip}:${userAgent}`)
+    .digest('hex')
+    .substring(0, 32);
+
+  return `anon_${hash}`;
+}
+
+/**
  * GET /api/user-vote?articleId={id}
- * Check if the authenticated user has upvoted a specific article
+ * Check if the current visitor/user has upvoted a specific article
+ * Supports both authenticated and anonymous voting
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -31,42 +52,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Get authorization header
+      // Check for authenticated user first
       const authHeader = req.headers.authorization;
+      let voterId: string;
 
-      // If no auth, return not voted
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(200).json({
-          success: true,
-          data: {
-            hasUpvoted: false,
-            articleId,
-          },
-        });
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+
+        if (user) {
+          voterId = user.id;
+        } else {
+          // Fall back to anonymous voting
+          voterId = generateVoterId(req);
+        }
+      } else {
+        // Anonymous voting
+        voterId = generateVoterId(req);
       }
 
-      const token = authHeader.replace('Bearer ', '');
-
-      // Verify token and get user
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-      // If auth fails, return not voted (don't error)
-      if (authError || !user) {
-        return res.status(200).json({
-          success: true,
-          data: {
-            hasUpvoted: false,
-            articleId,
-          },
-        });
-      }
-
-      // Check if user has voted for this article
+      // Check if voter has voted for this article
       const { data: vote, error: voteError } = await supabase
         .from('news_votes')
         .select('id')
         .eq('article_id', articleId)
-        .eq('user_id', user.id)
+        .eq('voter_id', voterId)
         .maybeSingle();
 
       if (voteError) {
@@ -82,7 +92,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data: {
           hasUpvoted: !!vote,
           articleId,
-          userId: user.id,
         },
       });
 
