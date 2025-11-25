@@ -14,6 +14,7 @@ import ArticleCard from '../ui/ArticleCard';
 import CategoryFilter from '../ui/CategoryFilter';
 import SortFilter from '../ui/SortFilter';
 import NewsletterSignup from '../ui/NewsletterSignup';
+import StoryOfTheWeek from '../ui/StoryOfTheWeek';
 
 interface NewsroomHomeProps {
   onArticleClick: (articleId: string) => void;
@@ -194,7 +195,10 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
             </div>
           ) : (
             <div className="space-y-12">
-              {/* Featured Story of the Week */}
+              {/* Story of the Week - API-driven engagement scoring */}
+              <StoryOfTheWeek period="week" limit={10} />
+
+              {/* Featured Story of the Week - Legacy */}
               {featuredArticle && (
                 <div className="mb-12">
                   <div className="flex items-center gap-3 mb-6">
