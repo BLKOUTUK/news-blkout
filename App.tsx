@@ -5,7 +5,7 @@ import { PreviewArea } from './components/PreviewArea';
 import { GeneratedAsset, MediaType, AspectRatio, ImageStyle, VideoStyle, LogoAsset, InputSource, OverlayAnimation, AIProvider, VideoResolution, ProjectTemplate, AgentTask, LogoPosition } from './types';
 import { generateImageAsset, generateVideoAsset, checkProviderApiKey, promptProviderApiKey, blobToBase64, urlToBase64 } from './services/generation';
 import { fetchAgentTasks, pushToAutomation } from './services/integration';
-import { TriangleAlert, PanelLeft, PanelRight, Wifi, ArrowLeft, ExternalLink } from 'lucide-react';
+import { AlertTriangle, PanelLeft, PanelRight, Wifi, ArrowLeft, ExternalLink } from 'lucide-react';
 import { PROJECT_TEMPLATES } from './constants';
 
 export default function App() {
@@ -330,13 +330,13 @@ export default function App() {
         {/* Top notification for API Key (Only if needed for provider) */}
         {!hasApiKey && provider === AIProvider.GOOGLE && (
             <div className="bg-amber-600/20 border-b border-amber-600/50 p-2 text-center text-xs text-amber-200 flex items-center justify-center gap-2 cursor-pointer hover:bg-amber-600/30 transition-colors shrink-0" onClick={handleApiKeyRequest}>
-                <TriangleAlert size={14} />
+                <AlertTriangle size={14} />
                 <span>Paid API Key required for Veo & Pro models. Click here to select project.</span>
             </div>
         )}
          {errorMsg && (
             <div className="bg-red-600/20 border-b border-red-600/50 p-2 text-center text-xs text-red-200 flex items-center justify-center gap-2 shrink-0">
-                <TriangleAlert size={14} />
+                <AlertTriangle size={14} />
                 <span>{errorMsg}</span>
             </div>
         )}
