@@ -3,6 +3,12 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/cron/fetch-news",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -40,6 +46,9 @@
   "functions": {
     "api/**/*.ts": {
       "maxDuration": 30
+    },
+    "api/cron/*.ts": {
+      "maxDuration": 60
     }
   },
   "regions": ["lhr1"],
