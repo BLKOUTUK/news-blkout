@@ -5,8 +5,6 @@
  * and prepares them for database insertion.
  */
 
-// @ts-ignore - rss-parser default export
-import Parser from 'rss-parser';
 import crypto from 'crypto';
 import {
   getActiveRssSources,
@@ -16,17 +14,25 @@ import {
   type NewsSource,
 } from './news-sources';
 
-const rssParser = new Parser({
-  timeout: 10000,
-  customFields: {
-    item: [
-      ['media:content', 'media'],
-      ['media:thumbnail', 'thumbnail'],
-      ['enclosure', 'enclosure'],
-      ['dc:creator', 'creator'],
-    ],
-  },
-});
+// Lazy-load rss-parser to avoid module resolution issues
+let rssParser: any = null;
+async function getParser() {
+  if (!rssParser) {
+    const Parser = (await import('rss-parser')).default;
+    rssParser = new Parser({
+      timeout: 10000,
+      customFields: {
+        item: [
+          ['media:content', 'media'],
+          ['media:thumbnail', 'thumbnail'],
+          ['enclosure', 'enclosure'],
+          ['dc:creator', 'creator'],
+        ],
+      },
+    });
+  }
+  return rssParser;
+}
 
 export interface FetchedArticle {
   title: string;
@@ -108,7 +114,8 @@ async function fetchFromRssFeed(source: NewsSource): Promise<FetchedArticle[]> {
   if (!source.feedUrl) return [];
 
   try {
-    const feed = await rssParser.parseURL(source.feedUrl);
+    const parser = await getParser();
+    const feed = await parser.parseURL(source.feedUrl);
     const articles: FetchedArticle[] = [];
 
     for (const item of feed.items.slice(0, 20)) { // Limit to 20 items per feed
