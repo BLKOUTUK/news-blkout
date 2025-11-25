@@ -1,0 +1,5 @@
+{
+  "name": "SocialSync Content Generation",
+  "description": "The AI content generation module for the blkoutuk/comms-blkout admin dashboard, leveraging Nano Banana Pro and Veo.",
+  "requestFramePermissions": []
+}
