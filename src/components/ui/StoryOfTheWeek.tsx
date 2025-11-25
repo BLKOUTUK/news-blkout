@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, TrendingUp, Users, Share2, ThumbsUp, ExternalLink } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { Crown, TrendingUp, Users, Share2, ThumbsUp, ExternalLink, Calendar } from 'lucide-react';
+import { formatRelativeTime, getWeekDateRange, formatPublishedDate } from '@/lib/utils';
 
 interface StoryData {
   id: string;
@@ -107,15 +107,26 @@ const StoryOfTheWeek: React.FC<StoryOfTheWeekProps> = ({
     month: 'Story of the Month',
   }[period];
 
+  // Get week date range for context
+  const weekRange = getWeekDateRange();
+
   return (
     <div className="space-y-6">
       {/* Featured Story */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <Crown className="h-6 w-6 text-liberation-sovereignty-gold animate-pulse" />
-          <h2 className="text-2xl font-bold text-liberation-sovereignty-gold uppercase tracking-wide">
-            {periodLabel}
-          </h2>
+        {/* Header with date context */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div className="flex items-center gap-3">
+            <Crown className="h-6 w-6 text-liberation-sovereignty-gold animate-pulse" />
+            <h2 className="text-2xl font-bold text-liberation-sovereignty-gold uppercase tracking-wide">
+              {periodLabel}
+            </h2>
+          </div>
+          {/* Date range badge */}
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-300 font-medium">{weekRange.label}</span>
+          </div>
         </div>
 
         <div
@@ -174,16 +185,20 @@ const StoryOfTheWeek: React.FC<StoryOfTheWeekProps> = ({
               )}
             </div>
 
-            {/* Meta */}
+            {/* Meta - with prominent date display */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-white/10">
-              <div className="flex items-center gap-4 text-sm text-gray-400">
-                <span>By {topStory.author}</span>
-                <span>•</span>
-                <span>{formatRelativeTime(topStory.published_at)}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                {/* Published date - prominent */}
+                <span className="inline-flex items-center gap-1.5 text-liberation-sovereignty-gold font-medium">
+                  <Calendar className="h-4 w-4" />
+                  {formatPublishedDate(topStory.published_at)}
+                </span>
+                <span className="hidden sm:inline text-gray-600">•</span>
+                <span className="text-gray-400">By {topStory.author}</span>
                 {topStory.source_name && (
                   <>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
+                    <span className="hidden sm:inline text-gray-600">•</span>
+                    <span className="flex items-center gap-1 text-gray-400">
                       <ExternalLink className="h-3 w-3" />
                       {topStory.source_name}
                     </span>
@@ -231,7 +246,9 @@ const StoryOfTheWeek: React.FC<StoryOfTheWeekProps> = ({
                     <h4 className="text-white font-semibold mb-1 line-clamp-1 group-hover:text-liberation-sovereignty-gold transition-colors">
                       {story.title}
                     </h4>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                      {/* Published date - now visible */}
+                      <span className="text-gray-400">{formatPublishedDate(story.published_at)}</span>
                       <span className="flex items-center gap-1">
                         <ThumbsUp className="h-3 w-3" />
                         {story.upvote_count}

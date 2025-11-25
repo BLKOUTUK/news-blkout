@@ -52,6 +52,65 @@ export function slugify(text: string): string {
     .trim();
 }
 
+// Get the date range for the current week (Mon-Sun)
+export function getWeekDateRange(): { start: Date; end: Date; label: string } {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+  const start = new Date(now);
+  start.setDate(now.getDate() + mondayOffset);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  const formatShort = (date: Date) => date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short'
+  });
+
+  return {
+    start,
+    end,
+    label: `${formatShort(start)} - ${formatShort(end)}`
+  };
+}
+
+// Format date with day name for clarity
+export function formatDateWithDay(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+// Format as "Posted on Monday, 25 Nov"
+export function formatPublishedDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInDays === 0) {
+    return 'Today';
+  } else if (diffInDays === 1) {
+    return 'Yesterday';
+  } else if (diffInDays < 7) {
+    return date.toLocaleDateString('en-GB', { weekday: 'long' });
+  } else {
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  }
+}
+
 // Liberation color utilities
 export const liberationColors = {
   blackPower: '#000000',
