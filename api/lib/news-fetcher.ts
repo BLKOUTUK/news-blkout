@@ -5,6 +5,7 @@
  * and prepares them for database insertion.
  */
 
+// @ts-ignore - rss-parser default export
 import Parser from 'rss-parser';
 import crypto from 'crypto';
 import {
