@@ -1,0 +1,43 @@
+{
+  "description": "Optimized Event Registry query for Black LGBT content in UK - works within 15 keyword limit",
+  "query": {
+    "$query": {
+      "$or": [
+        {
+          "keyword": "UK Black Pride",
+          "keywordLoc": "title,body"
+        },
+        {
+          "keyword": "Black LGBTQ Britain",
+          "keywordLoc": "title,body"
+        },
+        {
+          "keyword": "Black queer UK",
+          "keywordLoc": "title,body"
+        }
+      ],
+      "lang": "eng"
+    },
+    "$filter": {
+      "forceMaxDataTimeWindow": "31",
+      "dataType": ["news", "blog"],
+      "isDuplicate": "skipDuplicates",
+      "hasDuplicate": "skipHasDuplicates",
+      "startSourceRankPercentile": 0,
+      "endSourceRankPercentile": 60
+    }
+  },
+  "resultType": "articles",
+  "articlesPage": 1,
+  "articlesCount": 100,
+  "articlesSortBy": "socialScore",
+  "includeArticleTitle": true,
+  "includeArticleBasicInfo": true,
+  "includeArticleBody": true,
+  "includeArticleCategories": true,
+  "includeArticleLocation": true,
+  "includeArticleSocialScore": true,
+  "includeSourceTitle": true,
+  "includeSourceRanking": true,
+  "apiKey": "a2109782-1945-45e8-a4f3-56c968a263ac"
+}
