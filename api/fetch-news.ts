@@ -104,19 +104,55 @@ function extractImage(item: any): string | undefined {
   return undefined;
 }
 
-function calculateRelevanceScore(title: string, content: string): number {
+function calculateRelevanceScore(title: string, content: string, sourceTags: string[]): number {
   const text = `${title} ${content}`.toLowerCase();
-  const highRelevance = ['black queer', 'black gay', 'black lgbtq', 'black trans', 'qtipoc', 'blkout'];
-  const mediumRelevance = ['lgbtq', 'queer', 'gay', 'lesbian', 'trans', 'bisexual', 'pride'];
-  const lowRelevance = ['diversity', 'inclusion', 'equality', 'rights'];
 
-  let score = 30;
-  for (const keyword of highRelevance) if (text.includes(keyword)) score += 15;
-  for (const keyword of mediumRelevance) if (text.includes(keyword)) score += 8;
-  for (const keyword of lowRelevance) if (text.includes(keyword)) score += 3;
-  if (text.includes('uk') || text.includes('britain') || text.includes('london')) score += 10;
+  // Explicit Black LGBTQ+ intersectional terms - automatic high relevance
+  const intersectionalTerms = [
+    'black queer', 'black gay', 'black lgbtq', 'black trans', 'black lesbian',
+    'qtipoc', 'qpoc', 'blkout', 'black pride', 'uk black pride',
+    'african diaspora lgbtq', 'caribbean lgbtq', 'black bisexual',
+    'black nonbinary', 'black non-binary'
+  ];
 
-  return Math.min(100, score);
+  // Check for explicit intersectional content - these always pass
+  for (const term of intersectionalTerms) {
+    if (text.includes(term)) return 100;
+  }
+
+  // Check if source is tagged as both black AND lgbtq (like gal-dem)
+  const hasBlackTag = sourceTags.some(t => ['black', 'african', 'caribbean'].includes(t.toLowerCase()));
+  const hasLgbtqTag = sourceTags.some(t => ['lgbtq', 'queer', 'gay', 'lesbian', 'trans'].includes(t.toLowerCase()));
+  const isIntersectionalSource = hasBlackTag && hasLgbtqTag;
+
+  // LGBTQ+ keywords
+  const lgbtqKeywords = ['lgbtq', 'queer', 'gay', 'lesbian', 'trans', 'bisexual', 'pride', 'nonbinary', 'non-binary', 'drag', 'same-sex'];
+  // Black community keywords
+  const blackKeywords = ['black', 'african', 'caribbean', 'windrush', 'diaspora', 'afro'];
+
+  const hasLgbtqContent = lgbtqKeywords.some(kw => text.includes(kw));
+  const hasBlackContent = blackKeywords.some(kw => text.includes(kw));
+
+  // REQUIRE BOTH: Article must mention both Black AND LGBTQ+ topics
+  // OR come from an intersectional source (tagged as both)
+  if (hasLgbtqContent && hasBlackContent) {
+    // Great - article explicitly covers both communities
+    let score = 80;
+    if (text.includes('uk') || text.includes('britain') || text.includes('london')) score += 10;
+    return Math.min(100, score);
+  }
+
+  if (isIntersectionalSource) {
+    // Source is known for intersectional content (e.g., gal-dem)
+    // Accept articles that mention either community
+    if (hasLgbtqContent || hasBlackContent) {
+      return 70;
+    }
+  }
+
+  // Articles that only cover one community without the other - reject
+  // This filters out generic LGBTQ+ news and generic Black news
+  return 0;
 }
 
 // ============== RSS FETCHER ==============
@@ -165,7 +201,7 @@ async function fetchFromRssFeed(source: NewsSource): Promise<FetchedArticle[]> {
         featuredImage: extractImage(item),
         imageAlt: item.title,
         category: source.category,
-        relevanceScore: calculateRelevanceScore(item.title, content),
+        relevanceScore: calculateRelevanceScore(item.title, content, source.tags),
         urlHash: generateUrlHash(item.link),
         tags: source.tags,
       });
@@ -225,7 +261,7 @@ async function fetchFromNewsApi(apiKey: string): Promise<FetchedArticle[]> {
             featuredImage: item.urlToImage,
             imageAlt: item.title,
             category: queryConfig.category,
-            relevanceScore: calculateRelevanceScore(item.title, content),
+            relevanceScore: calculateRelevanceScore(item.title, content, ['newsapi', queryConfig.category]),
             urlHash: generateUrlHash(item.url),
             tags: ['newsapi', queryConfig.category],
           });
@@ -270,8 +306,8 @@ async function fetchAllNews(newsApiKey?: string) {
     return true;
   });
 
-  // Filter by relevance
-  const filtered = deduplicated.filter(a => a.relevanceScore >= 35);
+  // Filter by relevance - only keep intersectional Black LGBTQ+ content (score > 0)
+  const filtered = deduplicated.filter(a => a.relevanceScore > 0);
 
   // Sort by relevance and date
   const sorted = filtered.sort((a, b) => {
