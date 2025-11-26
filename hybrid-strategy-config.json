@@ -1,0 +1,228 @@
+{
+  "eventRegistryQueries": {
+    "blackLGBTUK": {
+      "name": "Black LGBT UK Focus",
+      "config": {
+        "query": {
+          "$query": {
+            "$or": [
+              {
+                "keyword": "UK Black Pride",
+                "keywordLoc": "title,body"
+              },
+              {
+                "keyword": "Black LGBTQ Britain",
+                "keywordLoc": "title,body"
+              },
+              {
+                "keyword": "Black queer UK",
+                "keywordLoc": "title,body"
+              }
+            ],
+            "lang": "eng"
+          },
+          "$filter": {
+            "forceMaxDataTimeWindow": "31",
+            "dataType": [
+              "news",
+              "blog"
+            ],
+            "isDuplicate": "skipDuplicates"
+          }
+        },
+        "resultType": "articles",
+        "articlesPage": 1,
+        "articlesCount": 50,
+        "articlesSortBy": "socialScore",
+        "includeArticleTitle": true,
+        "includeArticleBasicInfo": true,
+        "includeArticleBody": false,
+        "includeSourceTitle": true,
+        "apiKey": "a2109782-1945-45e8-a4f3-56c968a263ac"
+      }
+    },
+    "blackTransUK": {
+      "name": "Black Trans UK Focus",
+      "config": {
+        "query": {
+          "$query": {
+            "$or": [
+              {
+                "keyword": "Black trans UK",
+                "keywordLoc": "title,body"
+              },
+              {
+                "keyword": "Black transgender Britain",
+                "keywordLoc": "title,body"
+              }
+            ],
+            "lang": "eng"
+          },
+          "$filter": {
+            "forceMaxDataTimeWindow": "31",
+            "dataType": [
+              "news",
+              "blog"
+            ],
+            "isDuplicate": "skipDuplicates"
+          }
+        },
+        "resultType": "articles",
+        "articlesPage": 1,
+        "articlesCount": 30,
+        "articlesSortBy": "socialScore",
+        "includeArticleTitle": true,
+        "includeArticleBasicInfo": true,
+        "includeArticleBody": false,
+        "includeSourceTitle": true,
+        "apiKey": "a2109782-1945-45e8-a4f3-56c968a263ac"
+      }
+    },
+    "intersectionalRights": {
+      "name": "Intersectional Rights UK",
+      "config": {
+        "query": {
+          "$query": {
+            "$and": [
+              {
+                "$or": [
+                  {
+                    "keyword": "LGBT rights",
+                    "keywordLoc": "title,body"
+                  },
+                  {
+                    "keyword": "racial justice",
+                    "keywordLoc": "title,body"
+                  }
+                ]
+              },
+              {
+                "keyword": "intersectionality",
+                "keywordLoc": "title,body"
+              }
+            ],
+            "lang": "eng"
+          },
+          "$filter": {
+            "forceMaxDataTimeWindow": "31",
+            "dataType": [
+              "news",
+              "blog"
+            ],
+            "isDuplicate": "skipDuplicates"
+          }
+        },
+        "resultType": "articles",
+        "articlesPage": 1,
+        "articlesCount": 30,
+        "articlesSortBy": "rel",
+        "includeArticleTitle": true,
+        "includeArticleBasicInfo": true,
+        "includeArticleBody": false,
+        "includeSourceTitle": true,
+        "apiKey": "a2109782-1945-45e8-a4f3-56c968a263ac"
+      }
+    }
+  },
+  "rssFeeds": {
+    "lgbtqMedia": {
+      "category": "LGBTQ+ Media (UK Focus)",
+      "feeds": [
+        {
+          "name": "Pink News UK",
+          "url": "https://www.pinknews.co.uk/feed/",
+          "priority": "high",
+          "notes": "Primary UK LGBTQ+ news source"
+        },
+        {
+          "name": "Attitude Magazine",
+          "url": "https://attitude.co.uk/feed/",
+          "priority": "high",
+          "notes": "UK LGBTQ+ culture and lifestyle"
+        },
+        {
+          "name": "Gay Times UK",
+          "url": "https://www.gaytimes.co.uk/feed/",
+          "priority": "medium",
+          "notes": "LGBTQ+ news and culture"
+        },
+        {
+          "name": "DIVA Magazine",
+          "url": "https://divamag.co.uk/feed/",
+          "priority": "medium",
+          "notes": "UK lesbian and bisexual women's magazine"
+        }
+      ]
+    },
+    "blackMedia": {
+      "category": "Black British Media",
+      "feeds": [
+        {
+          "name": "gal-dem",
+          "url": "https://gal-dem.com/feed/",
+          "priority": "high",
+          "notes": "Magazine written by women and non-binary people of colour"
+        },
+        {
+          "name": "The Voice UK",
+          "url": "https://www.voice-online.co.uk/feed/",
+          "priority": "high",
+          "notes": "Leading Black British newspaper"
+        },
+        {
+          "name": "Media Diversified",
+          "url": "https://mediadiversified.org/feed/",
+          "priority": "medium",
+          "notes": "Perspectives from marginalized groups"
+        }
+      ]
+    },
+    "mainstream": {
+      "category": "Mainstream UK Media (Targeted Sections)",
+      "feeds": [
+        {
+          "name": "Guardian - LGBTQ+",
+          "url": "https://www.theguardian.com/world/lgbt-rights/rss",
+          "priority": "high",
+          "notes": "Quality coverage of LGBTQ+ issues"
+        },
+        {
+          "name": "Guardian - Race",
+          "url": "https://www.theguardian.com/world/race/rss",
+          "priority": "high",
+          "notes": "Race and identity coverage"
+        },
+        {
+          "name": "BBC News - LGBTQ",
+          "url": "https://feeds.bbci.co.uk/news/topics/c7zp58j8wnyt/lgbtq/rss.xml",
+          "priority": "medium",
+          "notes": "BBC LGBTQ+ topic feed"
+        },
+        {
+          "name": "Independent UK",
+          "url": "https://www.independent.co.uk/news/uk/rss",
+          "priority": "low",
+          "notes": "General UK news (filter for relevant content)"
+        }
+      ]
+    }
+  },
+  "implementation": {
+    "refreshSchedule": {
+      "eventRegistry": "0 */24 * * *",
+      "rssHigh": "0 */6 * * *",
+      "rssMedium": "0 */12 * * *",
+      "rssLow": "0 0 * * *"
+    },
+    "deduplication": {
+      "enabled": true,
+      "method": "title-similarity",
+      "threshold": 0.85
+    },
+    "filtering": {
+      "minRelevanceScore": 3,
+      "excludePartisanSources": true,
+      "requireUKFocus": false
+    }
+  }
+}
