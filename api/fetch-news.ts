@@ -320,8 +320,9 @@ async function insertArticle(article: FetchedArticle): Promise<boolean> {
       interest_score: Math.min(100, article.relevanceScore),
       url_hash: article.urlHash,
       read_time: `${Math.ceil(article.content.split(/\s+/).length / 200)} min read`,
-      status: 'published',
-      moderation_status: 'auto-approved',
+      status: 'review',
+      published: false,
+      moderation_status: 'pending',
       topics: article.tags,
     });
 
