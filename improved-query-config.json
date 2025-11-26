@@ -1,0 +1,60 @@
+{
+  "query": {
+    "$query": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "conceptUri": "http://en.wikipedia.org/wiki/LGBT_rights",
+              "lang": "eng"
+            },
+            {
+              "conceptUri": "http://en.wikipedia.org/wiki/Black_British",
+              "lang": "eng"
+            },
+            {
+              "keyword": "Black LGBTQ",
+              "keywordLoc": "title,body"
+            },
+            {
+              "keyword": "Black queer",
+              "keywordLoc": "title,body"
+            },
+            {
+              "keyword": "Black trans",
+              "keywordLoc": "title,body"
+            }
+          ]
+        },
+        {
+          "locationUri": "http://en.wikipedia.org/wiki/United_Kingdom"
+        },
+        {
+          "lang": "eng"
+        }
+      ]
+    },
+    "$filter": {
+      "forceMaxDataTimeWindow": "31",
+      "dataType": ["news", "blog"],
+      "isDuplicate": "skipDuplicates",
+      "hasDuplicate": "skipHasDuplicates",
+      "startSourceRankPercentile": 0,
+      "endSourceRankPercentile": 60
+    }
+  },
+  "resultType": "articles",
+  "articlesPage": 1,
+  "articlesCount": 50,
+  "articlesSortBy": "rel",
+  "includeArticleTitle": true,
+  "includeArticleBasicInfo": true,
+  "includeArticleBody": true,
+  "includeArticleCategories": true,
+  "includeArticleConcepts": true,
+  "includeArticleLocation": true,
+  "includeArticleSocialScore": true,
+  "includeSourceTitle": true,
+  "includeSourceRanking": true,
+  "apiKey": "a2109782-1945-45e8-a4f3-56c968a263ac"
+}
