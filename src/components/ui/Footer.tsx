@@ -100,6 +100,13 @@ const Footer: React.FC = () => {
             © {currentYear} BLKOUT. Liberation through technology.
           </p>
         </div>
+
+        {/* FCA Registration */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-600 max-w-2xl mx-auto">
+            BLKOUT Creative Ltd is registered by the Financial Conduct Authority (London) as a Community Benefit Society under the Co-operative and Community Benefit Societies Act 2014.
+          </p>
+        </div>
       </div>
     </footer>
   );
