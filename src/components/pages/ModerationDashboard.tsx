@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, Loader2, ExternalLink, Download, Edit2, Save, X as XIcon } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, ExternalLink, Download, Edit2, Save, X as XIcon, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface QueueItem {
@@ -133,6 +133,38 @@ const ModerationDashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Error rejecting item:', error);
       alert(`Failed to reject item: ${error.message}`);
+    }
+  };
+
+  const handleDelete = async (item: QueueItem) => {
+    if (!confirm(`Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          itemId: item.id,
+          item: item,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete item');
+      }
+
+      alert('Article permanently deleted');
+      fetchQueueItems();
+    } catch (error: any) {
+      console.error('Error deleting item:', error);
+      alert(`Failed to delete item: ${error.message}`);
     }
   };
 
@@ -441,6 +473,35 @@ const ModerationDashboard: React.FC = () => {
                           title="Reject"
                         >
                           <XCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
+                    {item.status === 'approved' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEdit(item)}
+                          className="p-2 bg-blue-500/20 text-blue-500 rounded-md hover:bg-blue-500/30 transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item)}
+                          className="p-2 bg-red-500/20 text-red-500 rounded-md hover:bg-red-500/30 transition-colors"
+                          title="Delete permanently"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
+                    {item.status === 'rejected' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDelete(item)}
+                          className="p-2 bg-red-500/20 text-red-500 rounded-md hover:bg-red-500/30 transition-colors"
+                          title="Delete permanently"
+                        >
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     )}

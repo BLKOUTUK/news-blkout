@@ -47,5 +47,11 @@
     }
   },
   "regions": ["lhr1"],
-  "trailingSlash": false
+  "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/fetch-news",
+      "schedule": "0 6,18 * * *"
+    }
+  ]
 }
