@@ -69,7 +69,7 @@ function App() {
   };
 
   const navigateToPlatform = () => {
-    window.location.href = 'https://blkout.vercel.app';
+    window.location.href = 'https://blkoutuk.com';
   };
 
   const navigateToSubmit = () => {

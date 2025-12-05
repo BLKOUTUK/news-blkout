@@ -187,7 +187,7 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                 will shape our collective news agenda and train IVOR.
               </p>
               <button
-                onClick={() => window.open('https://blkout.vercel.app', '_blank')}
+                onClick={() => window.open('https://blkoutuk.com', '_blank')}
                 className="bg-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold/90 text-black py-3 px-8 rounded-lg font-bold transition-all hover:scale-105"
               >
                 Return to Platform

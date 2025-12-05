@@ -21,17 +21,17 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="https://blkout.vercel.app" className="text-gray-400 hover:text-liberation-gold-divine transition-colors">
+                <a href="https://blkoutuk.com" className="text-gray-400 hover:text-liberation-gold-divine transition-colors">
                   Main Platform
                 </a>
               </li>
               <li>
-                <a href="https://blkout.vercel.app/about" className="text-gray-400 hover:text-liberation-gold-divine transition-colors">
+                <a href="https://blkoutuk.com/about" className="text-gray-400 hover:text-liberation-gold-divine transition-colors">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="https://blkout.vercel.app/governance" className="text-gray-400 hover:text-liberation-gold-divine transition-colors">
+                <a href="https://blkoutuk.com/governance" className="text-gray-400 hover:text-liberation-gold-divine transition-colors">
                   Governance
                 </a>
               </li>
@@ -58,7 +58,7 @@ const Footer: React.FC = () => {
                 </button>
               </li>
               <li>
-                <a href="https://voices-blkout.up.railway.app" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-liberation-gold-divine transition-colors flex items-center gap-1">
+                <a href="https://blog.blkoutuk.cloud" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-liberation-gold-divine transition-colors flex items-center gap-1">
                   BLKOUT Voices
                   <ExternalLink className="h-3 w-3" />
                 </a>
