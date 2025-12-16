@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 import type { ArticleCategory } from '@/types/newsroom';
+import { submitArticleToIvor } from '@/config/api';
 
 interface SubmitArticleFormProps {
   onClose?: () => void;
@@ -18,6 +19,10 @@ const SubmitArticleForm: React.FC<SubmitArticleFormProps> = ({ onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [liberationInfo, setLiberationInfo] = useState<{
+    score: number;
+    autoPublished: boolean;
+  } | null>(null);
 
   const categories: ArticleCategory[] = [
     'liberation',
@@ -35,23 +40,29 @@ const SubmitArticleForm: React.FC<SubmitArticleFormProps> = ({ onClose }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus('idle');
+    setLiberationInfo(null);
 
     try {
-      const response = await fetch('/api/submit-article', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          submittedBy: formData.submittedBy || 'anonymous',
-        }),
+      // Submit through IVOR Core API (Liberation Layer 3)
+      const result = await submitArticleToIvor({
+        title: formData.title,
+        url: formData.url,
+        excerpt: formData.excerpt,
+        category: formData.category,
+        submittedBy: formData.submittedBy || 'anonymous',
       });
-
-      const result = await response.json();
 
       if (result.success) {
         setSubmitStatus('success');
+
+        // Store liberation info for display
+        if (result.liberation) {
+          setLiberationInfo({
+            score: result.liberation.score,
+            autoPublished: result.liberation.autoPublished,
+          });
+        }
+
         setFormData({
           title: '',
           url: '',
@@ -60,13 +71,13 @@ const SubmitArticleForm: React.FC<SubmitArticleFormProps> = ({ onClose }) => {
           submittedBy: '',
         });
 
-        // Auto-close after success
+        // Auto-close after success (longer if auto-published to show celebration)
         setTimeout(() => {
           if (onClose) onClose();
-        }, 2000);
+        }, result.liberation?.autoPublished ? 3000 : 2000);
       } else {
         setSubmitStatus('error');
-        setErrorMessage(result.error || 'Submission failed');
+        setErrorMessage(result.message || 'Submission failed');
       }
     } catch (error) {
       setSubmitStatus('error');
@@ -163,9 +174,21 @@ const SubmitArticleForm: React.FC<SubmitArticleFormProps> = ({ onClose }) => {
         </div>
 
         {submitStatus === 'success' && (
-          <div className="flex items-center gap-2 p-3 bg-liberation-healing-green/20 border border-liberation-healing-green rounded-md">
-            <CheckCircle2 className="w-5 h-5 text-liberation-healing-green" />
-            <p className="text-liberation-healing-green">Article submitted successfully!</p>
+          <div className="flex flex-col gap-2 p-3 bg-liberation-healing-green/20 border border-liberation-healing-green rounded-md">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-liberation-healing-green" />
+              <p className="text-liberation-healing-green font-semibold">
+                {liberationInfo?.autoPublished
+                  ? '🏴‍☠️ Article auto-published! (Liberation-compliant)'
+                  : 'Article submitted for moderation!'}
+              </p>
+            </div>
+            {liberationInfo && (
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <Shield className="w-4 h-4" />
+                <span>Liberation Score: {Math.round(liberationInfo.score * 100)}%</span>
+              </div>
+            )}
           </div>
         )}
 
