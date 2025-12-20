@@ -82,22 +82,18 @@ const ModerationDashboard: React.FC = () => {
 
   const handleApprove = async (item: QueueItem) => {
     try {
-      const response = await fetch('/api/moderate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'approve',
-          itemId: item.id,
-          item: item,
-        }),
-      });
+      const { error } = await supabase
+        .from('news_articles')
+        .update({
+          status: 'published',
+          published: true,
+          published_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', item.id);
 
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to approve item');
+      if (error) {
+        throw new Error(error.message);
       }
 
       alert('Article approved and published!');
@@ -110,22 +106,17 @@ const ModerationDashboard: React.FC = () => {
 
   const handleReject = async (item: QueueItem) => {
     try {
-      const response = await fetch('/api/moderate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'reject',
-          itemId: item.id,
-          item: item,
-        }),
-      });
+      const { error } = await supabase
+        .from('news_articles')
+        .update({
+          status: 'archived',
+          published: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', item.id);
 
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to reject item');
+      if (error) {
+        throw new Error(error.message);
       }
 
       alert('Article rejected and removed from queue');
@@ -142,22 +133,13 @@ const ModerationDashboard: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/moderate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          itemId: item.id,
-          item: item,
-        }),
-      });
+      const { error } = await supabase
+        .from('news_articles')
+        .delete()
+        .eq('id', item.id);
 
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete item');
+      if (error) {
+        throw new Error(error.message);
       }
 
       alert('Article permanently deleted');
@@ -186,23 +168,23 @@ const ModerationDashboard: React.FC = () => {
 
   const saveEdit = async (item: QueueItem) => {
     try {
-      const response = await fetch('/api/moderate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'edit',
-          itemId: item.id,
-          item: item,
-          edits: editForm,
-        }),
-      });
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
 
-      const result = await response.json();
+      if (editForm.title !== undefined) updateData.title = editForm.title;
+      if (editForm.excerpt !== undefined) updateData.excerpt = editForm.excerpt;
+      if (editForm.content !== undefined) updateData.content = editForm.content;
+      if (editForm.category !== undefined) updateData.category = editForm.category;
+      if (editForm.url !== undefined) updateData.source_url = editForm.url;
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save edits');
+      const { error } = await supabase
+        .from('news_articles')
+        .update(updateData)
+        .eq('id', item.id);
+
+      if (error) {
+        throw new Error(error.message);
       }
 
       alert('Article updated successfully');
