@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const { action, itemId, item, edits } = req.body;
+      const { action, itemId, edits } = req.body;
 
       if (action === 'edit') {
         // Build update object with only defined fields

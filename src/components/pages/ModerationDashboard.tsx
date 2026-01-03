@@ -80,50 +80,41 @@ const ModerationDashboard: React.FC = () => {
     }
   };
 
-  const handleApprove = async (item: QueueItem) => {
+  const callModerateApi = async (action: string, itemId: string, edits?: Partial<QueueItem>) => {
     try {
-      const { error } = await supabase
-        .from('news_articles')
-        .update({
-          status: 'published',
-          published: true,
-          published_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', item.id);
+      const response = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, itemId, edits }),
+      });
 
-      if (error) {
-        throw new Error(error.message);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'API call failed');
       }
 
+      return result;
+    } catch (error: any) {
+      console.error(`Error with action ${action}:`, error);
+      alert(`Failed to ${action} item: ${error.message}`);
+      return null;
+    }
+  };
+
+  const handleApprove = async (item: QueueItem) => {
+    const result = await callModerateApi('approve', item.id);
+    if (result) {
       alert('Article approved and published!');
       fetchQueueItems();
-    } catch (error: any) {
-      console.error('Error approving item:', error);
-      alert(`Failed to approve item: ${error.message}`);
     }
   };
 
   const handleReject = async (item: QueueItem) => {
-    try {
-      const { error } = await supabase
-        .from('news_articles')
-        .update({
-          status: 'archived',
-          published: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', item.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
+    const result = await callModerateApi('reject', item.id);
+    if (result) {
       alert('Article rejected and removed from queue');
       fetchQueueItems();
-    } catch (error: any) {
-      console.error('Error rejecting item:', error);
-      alert(`Failed to reject item: ${error.message}`);
     }
   };
 
@@ -131,22 +122,10 @@ const ModerationDashboard: React.FC = () => {
     if (!confirm(`Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.`)) {
       return;
     }
-
-    try {
-      const { error } = await supabase
-        .from('news_articles')
-        .delete()
-        .eq('id', item.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
+    const result = await callModerateApi('delete', item.id);
+    if (result) {
       alert('Article permanently deleted');
       fetchQueueItems();
-    } catch (error: any) {
-      console.error('Error deleting item:', error);
-      alert(`Failed to delete item: ${error.message}`);
     }
   };
 
@@ -167,33 +146,12 @@ const ModerationDashboard: React.FC = () => {
   };
 
   const saveEdit = async (item: QueueItem) => {
-    try {
-      const updateData: any = {
-        updated_at: new Date().toISOString(),
-      };
-
-      if (editForm.title !== undefined) updateData.title = editForm.title;
-      if (editForm.excerpt !== undefined) updateData.excerpt = editForm.excerpt;
-      if (editForm.content !== undefined) updateData.content = editForm.content;
-      if (editForm.category !== undefined) updateData.category = editForm.category;
-      if (editForm.url !== undefined) updateData.source_url = editForm.url;
-
-      const { error } = await supabase
-        .from('news_articles')
-        .update(updateData)
-        .eq('id', item.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
+    const result = await callModerateApi('edit', item.id, editForm);
+    if (result) {
       alert('Article updated successfully');
       setEditingId(null);
       setEditForm({});
       fetchQueueItems();
-    } catch (error: any) {
-      console.error('Error saving edits:', error);
-      alert(`Failed to save edits: ${error.message}`);
     }
   };
 
