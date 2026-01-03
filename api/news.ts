@@ -7,6 +7,14 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+    console.error('Server configuration error: SUPABASE_URL or SUPABASE_ANON_KEY is not set.');
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error. Please check environment variables.',
+    });
+  }
+
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
