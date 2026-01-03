@@ -18,18 +18,31 @@ import cron from 'node-cron';
 import fetch from 'node-fetch';
 
 // Dynamically import and register API routes
-const apiDir = path.join(__dirname, 'api');
-(async () => {
-  const apiFiles = fs.readdirSync(apiDir);
-  for (const file of apiFiles) {
-    if (file.endsWith('.js')) {
-      const routeName = file.slice(0, -3);
-      const module = await import(path.join(apiDir, file));
+const registerApiRoutes = async (dir: string, prefix = '/api') => {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+    if (file.isDirectory()) {
+      await registerApiRoutes(fullPath, `${prefix}/${file.name}`);
+    } else if (file.name.endsWith('.js')) {
+      let routeName = file.name.slice(0, -3);
+      // Convert Vercel-style [param] to Express-style :param
+      routeName = routeName.replace(/\[(\w+)\]/g, ':$1');
+      const routePath = `${prefix}/${routeName}`;
+
+      const module = await import(fullPath);
       if (module.default) {
-        app.all(`/api/${routeName}`, module.default);
+        app.all(routePath, module.default);
+        console.log(`Registered API route: ${routePath}`);
       }
     }
   }
+};
+
+(async () => {
+  const apiDir = path.join(__dirname, 'api');
+  await registerApiRoutes(apiDir);
 })();
 
 // Schedule the cron job to fetch news every day at 6am and 6pm

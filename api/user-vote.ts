@@ -10,7 +10,7 @@ const supabase = createClient(
 /**
  * Generate anonymous voter ID from IP + User-Agent
  */
-function generateVoterId(req: VercelRequest): string {
+function generateVoterId(req: Request): string {
   const ip = req.headers['x-forwarded-for'] ||
              req.headers['x-real-ip'] ||
              req.socket?.remoteAddress ||
