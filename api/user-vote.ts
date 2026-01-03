@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
@@ -31,7 +31,7 @@ function generateVoterId(req: VercelRequest): string {
  * Check if the current visitor/user has upvoted a specific article
  * Supports both authenticated and anonymous voting
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY || ''
 );
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
     console.error('Server configuration error: SUPABASE_URL or SUPABASE_ANON_KEY is not set.');
     return res.status(500).json({

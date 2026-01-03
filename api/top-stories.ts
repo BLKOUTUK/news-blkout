@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -13,7 +13,7 @@ const supabase = createClient(
  * Engagement Score Formula:
  * upvotes + (comment_count * 2) + (share_count * 1.5)
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
