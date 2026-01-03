@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 );
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const { action, itemId, item, edits } = req.body;
+      const { action, itemId, edits } = req.body;
 
       if (action === 'edit') {
         // Build update object with only defined fields
@@ -51,6 +51,78 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
           success: true,
           message: 'Article updated successfully',
+        });
+      }
+
+      if (action === 'approve') {
+        // Update news_articles to published status
+        const { error: updateError } = await supabase
+          .from('news_articles')
+          .update({
+            status: 'published',
+            published: true,
+            published_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', itemId);
+
+        if (updateError) {
+          console.error('Approve error:', updateError);
+          return res.status(500).json({
+            success: false,
+            error: updateError.message,
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Article approved and published',
+        });
+      }
+
+      if (action === 'reject') {
+        // Update news_articles to archived status (keep in database for audit)
+        const { error: updateError } = await supabase
+          .from('news_articles')
+          .update({
+            status: 'archived',
+            published: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', itemId);
+
+        if (updateError) {
+          console.error('Reject error:', updateError);
+          return res.status(500).json({
+            success: false,
+            error: updateError.message,
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Article rejected and archived',
+        });
+      }
+
+      if (action === 'delete') {
+        // Permanently delete article from database
+        const { error: deleteError } = await supabase
+          .from('news_articles')
+          .delete()
+          .eq('id', itemId);
+
+        if (deleteError) {
+          console.error('Delete error:', deleteError);
+          return res.status(500).json({
+            success: false,
+            error: deleteError.message,
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Article permanently deleted',
         });
       }
 
