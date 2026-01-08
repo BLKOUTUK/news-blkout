@@ -5,6 +5,7 @@ import ArticleDetail from './components/pages/ArticleDetail';
 import SubmitArticleForm from './components/ui/SubmitArticleForm';
 import ModerationDashboard from './components/pages/ModerationDashboard';
 import Footer from './components/ui/Footer';
+import { InstallPrompt, OfflineIndicator } from './components/pwa';
 
 type Page = 'home' | 'article' | 'submit' | 'admin';
 
@@ -143,6 +144,10 @@ function App() {
 
       {/* Footer */}
       <Footer />
+
+      {/* PWA Components */}
+      <OfflineIndicator />
+      <InstallPrompt />
     </div>
   );
 }
