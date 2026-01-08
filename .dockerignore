@@ -1,0 +1,34 @@
+# .dockerignore for News BLKOUT
+# Prevents unnecessary files from being copied to Docker image
+
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env.local
+.env*.local
+dist
+.cache
+.vscode
+.idea
+*.log
+*.md
+!README.md
+.DS_Store
+coverage
+.nyc_output
+.swarm
+.claude-flow
+.vercel
+*.zip
+database
+api/node_modules
+scripts/*.py
+*.sh
+DEPLOYMENT*.md
+SESSION_SUMMARY*.md
+*_GUIDE.md
+*_PLAN.md
+*_REPORT.md
+*_SUMMARY.md
+test-*.js
