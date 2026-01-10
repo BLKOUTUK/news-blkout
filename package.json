@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx"
+    "lint": "eslint src --ext ts,tsx",
+    "diagnose": "tsx scripts/diagnose-empty-newsroom.ts",
+    "seed": "tsx scripts/seed-published-articles.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
@@ -46,6 +48,7 @@
     "postcss": "^8.4.0",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite": "^5.1.0",
     "vite-plugin-pwa": "^1.2.0",
