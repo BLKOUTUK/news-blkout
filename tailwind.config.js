@@ -5,12 +5,11 @@
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  presets: [require('../../packages/shared/design-system/tailwind.preset')],
+  presets: [require('./tailwind.preset')],
 
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "../../packages/shared/design-system/components/**/*.{js,ts,jsx,tsx}",
   ],
 
   theme: {
