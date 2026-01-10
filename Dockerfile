@@ -21,6 +21,9 @@ RUN npm run build
 # Production stage - Use nginx for proper MIME type handling
 FROM nginx:alpine AS runner
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
@@ -30,9 +33,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Expose port
 EXPOSE 80
 
-# Health check
+# Health check using curl (wget not available in nginx:alpine)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+  CMD curl -f http://localhost/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
