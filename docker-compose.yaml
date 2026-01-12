@@ -25,8 +25,9 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
-    ports:
-      - "3001:80"
+    # No host port mapping needed - Coolify proxy handles external access
+    expose:
+      - "80"
 
 networks:
   coolify:
