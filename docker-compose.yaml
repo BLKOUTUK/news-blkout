@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  news-blkout:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${COOLIFY_CONTAINER_NAME:-news-blkout}
+    restart: unless-stopped
+    networks:
+      - coolify
+    environment:
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_ENV=${VITE_ENV:-production}
+      - COOLIFY_URL=${COOLIFY_URL}
+      - COOLIFY_FQDN=${COOLIFY_FQDN}
+    labels:
+      - "coolify.managed=true"
+      - "coolify.version=1.0"
+      - "coolify.service=news-blkout"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    ports:
+      - "3001:80"
+
+networks:
+  coolify:
+    external: true
