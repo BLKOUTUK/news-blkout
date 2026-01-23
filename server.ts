@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 
 import fs from 'fs';
 import cron from 'node-cron';
-import fetch from 'node-fetch';
+// Note: Using native fetch (Node.js 18+), no need for node-fetch package
 
 // Dynamically import and register API routes
 const apiDir = path.join(__dirname, 'api');
