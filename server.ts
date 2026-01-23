@@ -22,14 +22,17 @@ const apiDir = path.join(__dirname, 'api');
 (async () => {
   const apiFiles = fs.readdirSync(apiDir);
   for (const file of apiFiles) {
-    if (file.endsWith('.js')) {
+    // Support both .js and .ts files (tsx runs .ts directly)
+    if (file.endsWith('.js') || file.endsWith('.ts')) {
       const routeName = file.slice(0, -3);
       const module = await import(path.join(apiDir, file));
       if (module.default) {
         app.all(`/api/${routeName}`, module.default);
+        console.log(`✅ Registered route: /api/${routeName}`);
       }
     }
   }
+  console.log(`🚀 All API routes registered`);
 })();
 
 // Schedule the cron job to fetch news every day at 6am and 6pm
