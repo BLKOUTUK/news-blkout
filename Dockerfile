@@ -1,5 +1,5 @@
-# News BLKOUT - Optimized Dockerfile for Coolify SPA deployment
-# Fixes MIME type issues by using nginx with proper configuration
+# News BLKOUT - Full-stack Express + React deployment
+# Includes backend API routes for news fetching and moderation
 
 FROM node:20-alpine AS builder
 
@@ -9,33 +9,45 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install ALL dependencies (including devDependencies needed for build)
-# Use npm install instead of npm ci (no package-lock.json in repo)
 RUN npm install
 
-# Copy source
+# Copy source (including api/ directory)
 COPY . .
 
-# Build the app
+# Build the Vite frontend
 RUN npm run build
 
-# Production stage - Use nginx for proper MIME type handling
-FROM nginx:alpine AS runner
+# Production stage - Node.js to run Express server
+FROM node:20-alpine AS runner
+
+WORKDIR /app
 
 # Install curl for health checks
 RUN apk add --no-cache curl
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy package files
+COPY package*.json ./
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Install only production dependencies
+RUN npm install --production
 
-# Expose port
-EXPOSE 80
+# Copy built frontend from builder
+COPY --from=builder /app/dist ./dist
 
-# Health check using curl (wget not available in nginx:alpine)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
+# Copy server and API routes
+COPY server.ts ./
+COPY api ./api
+COPY tsconfig.json tsconfig.node.json ./
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Install tsx to run TypeScript server
+RUN npm install -g tsx
+
+# Expose port (server.ts uses PORT env var or 3000)
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Start Express server (serves frontend + API routes)
+CMD ["tsx", "server.ts"]
