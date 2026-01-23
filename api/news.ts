@@ -64,11 +64,23 @@ export default async function handler(req: Request, res: Response) {
         });
       }
 
+      // Transform snake_case to camelCase for frontend
+      const transformedArticles = (data || []).map((article: any) => ({
+        ...article,
+        publishedAt: article.published_at,
+        createdAt: article.created_at,
+        updatedAt: article.updated_at,
+        isStoryOfWeek: article.is_story_of_week,
+        weeklyRank: article.weekly_rank,
+        totalVotes: article.total_votes,
+        interestScore: article.interest_score,
+      }));
+
       return res.status(200).json({
         success: true,
         data: {
-          articles: data || [],
-          total: data?.length || 0,
+          articles: transformedArticles,
+          total: transformedArticles.length,
         },
       });
     } catch (error) {
