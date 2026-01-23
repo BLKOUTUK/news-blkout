@@ -40,3 +40,6 @@ lerna-debug.log*
 # Vercel
 .vercel
 .env*.local
+
+# Vercel artifacts (using Coolify instead)
+.vercel
