@@ -53,7 +53,8 @@ cron.schedule('0 6,18 * * *', async () => {
 });
 
 // SPA fallback: serve index.html for any request that doesn't match an API route or a static file
-app.get('*', (req, res) => {
+// Note: Using app.use() instead of app.get('*') for Express 5.x compatibility
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
