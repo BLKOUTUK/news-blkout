@@ -56,7 +56,25 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Don't precache HTML - always fetch fresh for dynamic content
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        // Don't serve cached HTML for navigation - always go to network
+        navigateFallback: null,
         runtimeCaching: [
+          {
+            // JS/CSS files - network first with short cache fallback
+            // Ensures fresh code while providing offline fallback
+            urlPattern: /\.(?:js|css)$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'static-assets',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              },
+              networkTimeoutSeconds: 3
+            }
+          },
           {
             // Cache API responses from IVOR Core
             urlPattern: /^https:\/\/ivor\.blkoutuk\.cloud\/api\/.*/i,
@@ -74,14 +92,14 @@ export default defineConfig({
             }
           },
           {
-            // Cache news article images
+            // Cache news article images - these rarely change
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'news-images-cache',
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days (reduced from 30)
               }
             }
           },
@@ -109,7 +127,6 @@ export default defineConfig({
             }
           }
         ],
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         skipWaiting: true,
         clientsClaim: true
       },
