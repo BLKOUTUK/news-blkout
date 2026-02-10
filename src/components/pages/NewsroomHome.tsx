@@ -4,13 +4,11 @@ import {
   Crown,
   Zap,
   Clock,
-  ArrowRight,
   ThumbsUp,
   BarChart3,
   ChevronDown,
 } from 'lucide-react';
 import type { NewsArticle, ArticleCategory } from '@/types/newsroom';
-import { formatRelativeTime } from '@/lib/utils';
 import ArticleCard from '../ui/ArticleCard';
 import CategoryFilter from '../ui/CategoryFilter';
 import SortFilter from '../ui/SortFilter';
@@ -24,36 +22,49 @@ interface NewsroomHomeProps {
 
 type SortOption = 'interest' | 'recent' | 'weekly';
 
-const PAGE_SIZE = 20;
+interface VotingPeriodInfo {
+  periodNumber: number;
+  endDate: string;
+  daysRemaining: number;
+  totalArticles: number;
+  totalVotes: number;
+}
 
 const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<ArticleCategory | 'all'>('all');
   const [sortBy, setSortBy] = useState<SortOption>('interest');
+  const [votingPeriod, setVotingPeriod] = useState<VotingPeriodInfo | null>(null);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   useEffect(() => {
-    loadArticles(true);
+    loadArticles();
+    loadVotingPeriod();
   }, [selectedCategory, sortBy]);
 
-  const loadArticles = async (reset = false) => {
-    if (reset) {
-      setLoading(true);
-      setHasMore(true);
-    } else {
-      setLoadingMore(true);
-    }
-
+  const loadVotingPeriod = async () => {
     try {
-      const offset = reset ? 0 : articles.length;
+      const res = await fetch('/api/voting-period');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setVotingPeriod(data.data);
+        }
+      }
+    } catch (err) {
+      // Non-blocking
+    }
+  };
+
+  const loadArticles = async () => {
+    setLoading(true);
+    try {
       const params = new URLSearchParams({
         category: selectedCategory !== 'all' ? selectedCategory : '',
         sortBy,
         status: 'published',
-        limit: String(PAGE_SIZE),
-        offset: String(offset),
+        limit: '20',
       });
 
       const response = await fetch(`/api/news?${params}`);
@@ -61,34 +72,23 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          const newArticles = data.data.articles || [];
-          if (reset) {
-            setArticles(newArticles);
-          } else {
-            setArticles(prev => [...prev, ...newArticles]);
-          }
-          setHasMore(newArticles.length >= PAGE_SIZE);
+          setArticles(data.data.articles || []);
         } else {
-          if (reset) setArticles([]);
-          setHasMore(false);
+          setArticles([]);
         }
       } else {
         console.error('Failed to fetch articles');
-        if (reset) setArticles([]);
-        setHasMore(false);
+        setArticles([]);
       }
     } catch (error) {
       console.error('Failed to load articles:', error);
-      if (reset) setArticles([]);
-      setHasMore(false);
+      setArticles([]);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
-  const featuredArticle = articles.find((a) => a.isStoryOfWeek);
-  const regularArticles = articles.filter((a) => !a.isStoryOfWeek);
+  const regularArticles = articles;
 
   if (loading) {
     return (
@@ -105,62 +105,59 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* First-time visitor onboarding modal */}
+      {/* First-time visitor onboarding modal (handles all education) */}
       <VotingOnboardingModal />
 
-      {/* Hero Section with Voting CTA */}
-      <section className="relative min-h-[60vh] md:min-h-[70vh] overflow-hidden border-b border-white/10 bg-gradient-to-br from-gray-900 via-black to-gray-900">
-        {/* Background video - optional, gracefully degrades */}
+      {/* Compact Hero — period countdown integrated, gets users to content fast */}
+      <section className="relative min-h-[40vh] overflow-hidden border-b border-white/10">
+        {/* Background video */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
           onError={(e) => {
-            console.warn('Hero video failed to load');
             e.currentTarget.style.display = 'none';
           }}
         >
           <source src="/videos/hero/Hero4blkout(1).mp4" type="video/mp4" />
         </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/80"></div>
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/70"></div>
-
-        {/* Hero content */}
-        <div className="relative h-full flex items-center justify-center px-4 md:px-8 py-16">
-          <div className="max-w-7xl mx-auto text-center">
-            {/* Voting badge */}
-            <div className="inline-flex items-center gap-2 bg-liberation-sovereignty-gold/20 border border-liberation-sovereignty-gold/40 rounded-full px-4 py-2 mb-6">
-              <ThumbsUp className="h-4 w-4 text-liberation-sovereignty-gold" />
-              <span className="text-liberation-sovereignty-gold font-medium text-sm">YOUR VOTE SHAPES OUR NEWS</span>
-            </div>
-
-            <h1 className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-lg">
+        <div className="relative flex items-center justify-center px-4 md:px-8 py-12">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-3xl md:text-5xl font-black text-white mb-3 drop-shadow-lg">
               THE NEWS THAT <span className="text-liberation-gold-divine">MATTERS</span>
             </h1>
-
-            <p className="text-xl md:text-2xl text-gray-100 mb-6 max-w-3xl mx-auto drop-shadow-md">
-              This is <span className="text-liberation-sovereignty-gold font-semibold">community-owned journalism</span>.
-              Every week, the story YOU upvote most becomes our Story of the Week.
+            <p className="text-lg md:text-xl text-gray-200 mb-5 max-w-2xl mx-auto drop-shadow-md">
+              <span className="text-liberation-sovereignty-gold font-semibold">Community-owned journalism</span> — upvote the stories that matter to you
             </p>
 
-            {/* Scroll CTA */}
-            <div className="flex flex-col items-center gap-3 mt-8">
-              <p className="text-gray-300 text-lg">
-                Scroll down and click <ThumbsUp className="inline h-5 w-5 text-liberation-sovereignty-gold mx-1" /> on stories that matter to you
-              </p>
-              <ChevronDown className="h-8 w-8 text-liberation-sovereignty-gold animate-bounce" />
-            </div>
+            {/* Period countdown — integrated into hero */}
+            {votingPeriod && (
+              <div className="inline-flex items-center gap-3 bg-black/60 backdrop-blur-sm border border-liberation-sovereignty-gold/30 rounded-full px-5 py-2.5">
+                <Clock className="h-4 w-4 text-liberation-sovereignty-gold" />
+                <span className="text-sm text-white">
+                  <span className="text-liberation-sovereignty-gold font-bold text-base">
+                    {votingPeriod.daysRemaining}
+                  </span>
+                  {' '}{votingPeriod.daysRemaining === 1 ? 'day' : 'days'} left to vote
+                </span>
+                <span className="w-px h-4 bg-white/20"></span>
+                <span className="text-xs text-gray-400">
+                  {votingPeriod.totalVotes} votes cast
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="py-6 px-4 md:px-8 border-b border-white/10 bg-black/30">
+      {/* Filters — immediately accessible */}
+      <section className="py-4 px-4 md:px-8 border-b border-white/10 bg-black/30">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
+          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
             <CategoryFilter
               selected={selectedCategory}
               onChange={setSelectedCategory}
@@ -170,82 +167,10 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
         </div>
       </section>
 
-      {/* How It Works - Visual Steps */}
-      <section className="py-10 px-4 md:px-8 bg-gradient-to-b from-black/50 to-transparent">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-center text-2xl font-bold text-white mb-2">
-            HOW IT WORKS
-          </h2>
-          <p className="text-center text-gray-400 mb-8">
-            3 simple steps to shape our news
-          </p>
-
-          {/* Visual steps - horizontal on desktop, vertical on mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
-            {/* Step 1 */}
-            <div className="flex flex-col items-center text-center p-6 bg-white/5 rounded-xl border border-white/10 hover:border-liberation-sovereignty-gold/30 transition-all">
-              <div className="w-16 h-16 bg-liberation-sovereignty-gold/20 rounded-full flex items-center justify-center mb-4">
-                <ThumbsUp className="h-8 w-8 text-liberation-sovereignty-gold" />
-              </div>
-              <div className="text-3xl font-black text-liberation-sovereignty-gold mb-2">1</div>
-              <h3 className="text-lg font-bold text-white mb-2">Click Upvote</h3>
-              <p className="text-gray-400 text-sm">
-                Find a story you think is important and click the 👍 button
-              </p>
-            </div>
-
-            {/* Arrow (desktop only) */}
-            <div className="hidden md:flex items-center justify-center -mx-8">
-              <ArrowRight className="h-8 w-8 text-liberation-sovereignty-gold/50" />
-            </div>
-
-            {/* Step 2 */}
-            <div className="flex flex-col items-center text-center p-6 bg-white/5 rounded-xl border border-white/10 hover:border-liberation-pride-purple/30 transition-all md:col-start-2">
-              <div className="w-16 h-16 bg-liberation-pride-purple/20 rounded-full flex items-center justify-center mb-4">
-                <BarChart3 className="h-8 w-8 text-liberation-pride-purple" />
-              </div>
-              <div className="text-3xl font-black text-liberation-pride-purple mb-2">2</div>
-              <h3 className="text-lg font-bold text-white mb-2">Votes Counted</h3>
-              <p className="text-gray-400 text-sm">
-                Community votes are tallied throughout the week
-              </p>
-            </div>
-
-            {/* Arrow (desktop only) */}
-            <div className="hidden md:flex items-center justify-center -mx-8">
-              <ArrowRight className="h-8 w-8 text-liberation-sovereignty-gold/50" />
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex flex-col items-center text-center p-6 bg-white/5 rounded-xl border border-white/10 hover:border-liberation-sovereignty-gold/30 transition-all md:col-start-3">
-              <div className="w-16 h-16 bg-liberation-sovereignty-gold/20 rounded-full flex items-center justify-center mb-4">
-                <Crown className="h-8 w-8 text-liberation-sovereignty-gold" />
-              </div>
-              <div className="text-3xl font-black text-liberation-sovereignty-gold mb-2">3</div>
-              <h3 className="text-lg font-bold text-white mb-2">Top Story Wins</h3>
-              <p className="text-gray-400 text-sm">
-                Most-voted story becomes Story of the Week
-              </p>
-            </div>
-          </div>
-
-          {/* No login callout */}
-          <div className="mt-8 text-center">
-            <div className="inline-flex items-center gap-2 bg-liberation-sovereignty-gold/10 border border-liberation-sovereignty-gold/20 rounded-full px-5 py-2">
-              <Zap className="h-4 w-4 text-liberation-sovereignty-gold" />
-              <span className="text-liberation-sovereignty-gold font-medium text-sm">
-                No login required - just click and vote!
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <main className="py-12 px-4 md:px-8">
+      {/* Main Content — articles immediately visible */}
+      <main className="py-8 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {articles.length === 0 ? (
-            /* Empty State */
             <div className="text-center py-16">
               <div className="w-16 h-16 bg-liberation-sovereignty-gold/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <TrendingUp className="h-8 w-8 text-liberation-sovereignty-gold" />
@@ -254,83 +179,26 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                 Building Our Shared News Agenda
               </h2>
               <p className="text-lg text-gray-400 mb-8 max-w-xl mx-auto">
-                Community curators are discovering stories that matter to us. Your votes
-                will shape our collective news agenda and train IVOR.
+                Community curators are discovering stories that matter to us.
               </p>
-              <button
-                onClick={() => window.open('https://blkoutuk.com', '_blank')}
-                className="bg-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold/90 text-black py-3 px-8 rounded-lg font-bold transition-all hover:scale-105"
-              >
-                Return to Platform
-              </button>
             </div>
           ) : (
-            <div className="space-y-12">
-              {/* Story of the Week - API-driven engagement scoring */}
+            <div className="space-y-10">
+              {/* Current leaderboard */}
               <StoryOfTheWeek period="week" limit={10} />
 
-              {/* Featured Story of the Week - Legacy */}
-              {featuredArticle && (
-                <div className="mb-12">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Crown className="h-6 w-6 text-liberation-sovereignty-gold" />
-                    <h2 className="text-xl font-bold text-liberation-sovereignty-gold uppercase tracking-wide">
-                      Story of the Week
-                    </h2>
-                  </div>
-                  <div
-                    onClick={() => onArticleClick(featuredArticle.id)}
-                    className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-liberation-sovereignty-gold/30 transition-all duration-300 group cursor-pointer"
-                  >
-                    {featuredArticle.featuredImage && (
-                      <div className="aspect-video overflow-hidden">
-                        <img
-                          src={featuredArticle.featuredImage}
-                          alt={featuredArticle.imageAlt || featuredArticle.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                    )}
-                    <div className="p-4 sm:p-6 md:p-8">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-xs bg-liberation-sovereignty-gold text-black px-3 py-1 rounded-full font-semibold">
-                          {featuredArticle.category.toUpperCase()}
-                        </span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <Clock className="h-3 w-3" />
-                          <span>{featuredArticle.readTime}</span>
-                        </div>
-                      </div>
-
-                      <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight group-hover:text-liberation-sovereignty-gold transition-colors">
-                        {featuredArticle.title}
-                      </h3>
-
-                      <p className="text-gray-300 text-base sm:text-lg leading-relaxed mb-6">
-                        {featuredArticle.excerpt}
-                      </p>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
-                          <span>By {featuredArticle.author}</span>
-                          <span>•</span>
-                          <span>{formatRelativeTime(featuredArticle.publishedAt)}</span>
-                        </div>
-                        <button className="flex items-center gap-2 text-liberation-sovereignty-gold hover:translate-x-1 transition-transform text-sm font-medium">
-                          Read More <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Regular Articles Grid */}
+              {/* Votable article grid */}
               {regularArticles.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wide">
-                    Community Curated Stories
-                  </h2>
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-lg font-bold text-white uppercase tracking-wide">
+                      All Stories — Vote Now
+                    </h2>
+                    <div className="flex items-center gap-1 text-xs text-liberation-sovereignty-gold">
+                      <Zap className="h-3.5 w-3.5" />
+                      <span className="font-medium">No login needed</span>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {regularArticles.map((article) => (
                       <ArticleCard
@@ -340,19 +208,6 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                       />
                     ))}
                   </div>
-
-                  {/* Load More */}
-                  {hasMore && (
-                    <div className="text-center mt-10">
-                      <button
-                        onClick={() => loadArticles(false)}
-                        disabled={loadingMore}
-                        className="bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
-                      >
-                        {loadingMore ? 'Loading...' : 'Load More Stories'}
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -360,29 +215,56 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
         </div>
       </main>
 
-      {/* Newsletter Signup */}
-      <section className="py-16 px-4 md:px-8 border-t border-white/10 bg-black/30">
-        <NewsletterSignup />
+      {/* How It Works — collapsed below articles, not blocking content */}
+      <section className="px-4 md:px-8 border-t border-white/10">
+        <div className="max-w-5xl mx-auto">
+          <button
+            onClick={() => setShowHowItWorks(!showHowItWorks)}
+            className="w-full py-5 flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <span className="text-sm font-medium">How does community voting work?</span>
+            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showHowItWorks ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showHowItWorks && (
+            <div className="pb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="w-10 h-10 bg-liberation-sovereignty-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <ThumbsUp className="h-5 w-5 text-liberation-sovereignty-gold" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-1">1. Upvote</h3>
+                    <p className="text-xs text-gray-400">Click the vote button on stories that matter to you. No login required.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="w-10 h-10 bg-liberation-sovereignty-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="h-5 w-5 text-liberation-sovereignty-gold" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-1">2. Two-Week Cycle</h3>
+                    <p className="text-xs text-gray-400">Votes are tallied over a fortnightly period. Rankings update live.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="w-10 h-10 bg-liberation-sovereignty-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Crown className="h-5 w-5 text-liberation-sovereignty-gold" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-1">3. Top 3 Win</h3>
+                    <p className="text-xs text-gray-400">The three most-voted stories become Your Top Stories for that period.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="py-16 px-4 md:px-8 border-t border-white/10">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">
-            Shape Our <span className="text-liberation-sovereignty-gold">Shared News Agenda</span>
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-400 mb-8">
-            Phase 1: Community curation builds the foundation for IVOR's autonomous story discovery.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold/90 text-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-base sm:text-lg transition-all duration-300 hover:scale-105">
-              Get Curator Extension
-            </button>
-            <button className="bg-transparent border-2 border-liberation-sovereignty-gold text-liberation-sovereignty-gold hover:bg-liberation-sovereignty-gold hover:text-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-base sm:text-lg transition-all duration-300">
-              Curation Guidelines
-            </button>
-          </div>
-        </div>
+      {/* Newsletter Signup */}
+      <section className="py-12 px-4 md:px-8 border-t border-white/10 bg-black/30">
+        <NewsletterSignup />
       </section>
     </div>
   );

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Crown } from 'lucide-react';
 import NewsroomHome from './components/pages/NewsroomHome';
 import ArticleDetail from './components/pages/ArticleDetail';
+import WinnersPage from './components/pages/WinnersPage';
 import SubmitArticleForm from './components/ui/SubmitArticleForm';
 import ModerationDashboard from './components/pages/ModerationDashboard';
 import Footer from './components/ui/Footer';
 import { InstallPrompt, OfflineIndicator } from './components/pwa';
 
-type Page = 'home' | 'article' | 'submit' | 'admin';
+type Page = 'home' | 'article' | 'submit' | 'admin' | 'winners';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -21,6 +22,8 @@ function App() {
       setCurrentPage('admin');
     } else if (path === '/submit') {
       setCurrentPage('submit');
+    } else if (path === '/winners') {
+      setCurrentPage('winners');
     } else if (path.startsWith('/article/')) {
       const articleId = path.split('/article/')[1];
       if (articleId) {
@@ -41,6 +44,8 @@ function App() {
         setCurrentPage('admin');
       } else if (path === '/submit') {
         setCurrentPage('submit');
+      } else if (path === '/winners') {
+        setCurrentPage('winners');
       } else if (path.startsWith('/article/')) {
         const articleId = path.split('/article/')[1];
         if (articleId) {
@@ -76,6 +81,11 @@ function App() {
   const navigateToSubmit = () => {
     setCurrentPage('submit');
     window.history.pushState({}, '', '/submit');
+  };
+
+  const navigateToWinners = () => {
+    setCurrentPage('winners');
+    window.history.pushState({}, '', '/winners');
   };
 
   const navigateToAdmin = () => {
@@ -114,12 +124,21 @@ function App() {
               </div>
             </div>
 
-            <button
-              onClick={navigateToSubmit}
-              className="px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors text-sm"
-            >
-              Submit Story
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={navigateToWinners}
+                className="flex items-center gap-1.5 px-3 py-2 text-gray-400 hover:text-liberation-gold-divine transition-colors text-sm font-medium"
+              >
+                <Crown className="h-4 w-4" />
+                <span className="hidden sm:inline">Top Stories</span>
+              </button>
+              <button
+                onClick={navigateToSubmit}
+                className="px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors text-sm"
+              >
+                Submit Story
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -136,6 +155,9 @@ function App() {
           <div className="max-w-3xl mx-auto px-4 py-8">
             <SubmitArticleForm onClose={navigateToHome} />
           </div>
+        )}
+        {currentPage === 'winners' && (
+          <WinnersPage />
         )}
         {currentPage === 'admin' && (
           <ModerationDashboard />

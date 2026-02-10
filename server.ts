@@ -60,6 +60,39 @@ async function startServer() {
     }
   });
 
+  // Schedule fortnightly voting period rotation: every other Sunday at midnight UK time
+  // Cron: "0 0 * * 0" = every Sunday at midnight. The endpoint itself is idempotent —
+  // it only rotates if the active period's end_date has passed, so running weekly is safe.
+  cron.schedule('0 0 * * 0', async () => {
+    console.log('Running cron job: checking voting period rotation...');
+    try {
+      // First check if the active period has ended
+      const checkRes = await fetch(`http://localhost:${port}/api/voting-period`);
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        if (checkData.success && checkData.data && checkData.data.daysRemaining <= 0) {
+          console.log('Active period has ended — rotating...');
+          const rotateRes = await fetch(`http://localhost:${port}/api/rotate-period`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.CRON_SECRET}`
+            }
+          });
+          if (rotateRes.ok) {
+            const result = await rotateRes.json();
+            console.log('Voting period rotation completed:', JSON.stringify(result.data?.archivedPeriod?.winners || []));
+          } else {
+            console.error('Period rotation failed:', rotateRes.statusText);
+          }
+        } else {
+          console.log('Active period still has days remaining — skipping rotation.');
+        }
+      }
+    } catch (error) {
+      console.error('Period rotation cron error:', error);
+    }
+  });
+
   // SPA fallback: serve index.html for any request that doesn't match an API route or a static file
   // Note: Using app.use() instead of app.get('*') for Express 5.x compatibility
   app.use((req, res) => {

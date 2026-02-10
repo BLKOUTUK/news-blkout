@@ -70,10 +70,10 @@ export default async function handler(req: Request, res: Response) {
         voterId = generateVoterId(req);
       }
 
-      // Verify article exists
+      // Verify article exists and check voting period status
       const { data: article, error: fetchError } = await supabase
         .from('news_articles')
-        .select('id, upvote_count')
+        .select('id, upvote_count, voting_period_id')
         .eq('id', articleId)
         .single();
 
@@ -82,6 +82,22 @@ export default async function handler(req: Request, res: Response) {
           success: false,
           error: 'Article not found',
         });
+      }
+
+      // Block votes on archived period articles
+      if (article.voting_period_id) {
+        const { data: period } = await supabase
+          .from('voting_periods')
+          .select('status')
+          .eq('id', article.voting_period_id)
+          .single();
+
+        if (period && period.status !== 'active') {
+          return res.status(403).json({
+            success: false,
+            error: 'Voting has ended for this article. This period has been archived.',
+          });
+        }
       }
 
       // Check if voter has already upvoted (use voter_id column for anon votes)

@@ -8,9 +8,10 @@ import ShareButtons from './ShareButtons';
 interface ArticleCardProps {
   article: NewsArticle;
   onClick?: () => void;
+  votingEnabled?: boolean;
 }
 
-const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
+const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick, votingEnabled = true }) => {
   const [upvoteCount, setUpvoteCount] = useState(article.totalVotes || 0);
   const [hasUpvoted, setHasUpvoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
@@ -173,21 +174,29 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
               />
             )}
 
-            {/* Upvote button - prominent with label */}
-            <button
-              onClick={handleVote}
-              disabled={isVoting}
-              className={`group/vote flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
-                hasUpvoted
-                  ? 'bg-liberation-sovereignty-gold text-black shadow-lg shadow-liberation-sovereignty-gold/20'
-                  : 'bg-liberation-sovereignty-gold/10 text-liberation-sovereignty-gold border border-liberation-sovereignty-gold/30 hover:bg-liberation-sovereignty-gold hover:text-black hover:scale-105'
-              } ${isVoting ? 'opacity-50 cursor-wait' : ''}`}
-              title={hasUpvoted ? 'Remove upvote' : 'Upvote this story - your vote counts!'}
-            >
-              <ThumbsUp className={`h-5 w-5 ${hasUpvoted ? 'fill-current' : ''} ${isVoting ? 'animate-pulse' : 'group-hover/vote:scale-110'} transition-transform`} />
-              <span className="hidden sm:inline">{hasUpvoted ? 'Voted' : 'Vote'}</span>
-              <span className="font-bold">{upvoteCount}</span>
-            </button>
+            {/* Upvote button or static vote count */}
+            {votingEnabled ? (
+              <button
+                onClick={handleVote}
+                disabled={isVoting}
+                className={`group/vote flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  hasUpvoted
+                    ? 'bg-liberation-sovereignty-gold text-black shadow-lg shadow-liberation-sovereignty-gold/20'
+                    : 'bg-liberation-sovereignty-gold/10 text-liberation-sovereignty-gold border border-liberation-sovereignty-gold/30 hover:bg-liberation-sovereignty-gold hover:text-black hover:scale-105'
+                } ${isVoting ? 'opacity-50 cursor-wait' : ''}`}
+                title={hasUpvoted ? 'Remove upvote' : 'Upvote this story - your vote counts!'}
+              >
+                <ThumbsUp className={`h-5 w-5 ${hasUpvoted ? 'fill-current' : ''} ${isVoting ? 'animate-pulse' : 'group-hover/vote:scale-110'} transition-transform`} />
+                <span className="hidden sm:inline">{hasUpvoted ? 'Voted' : 'Vote'}</span>
+                <span className="font-bold">{upvoteCount}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm bg-white/5 text-gray-500 border border-white/10" title="Voting has closed for this period">
+                <ThumbsUp className="h-4 w-4" />
+                <span className="font-bold">{upvoteCount}</span>
+                <span className="text-xs text-gray-600">final</span>
+              </div>
+            )}
           </div>
         </div>
 

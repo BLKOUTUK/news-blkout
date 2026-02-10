@@ -26,7 +26,7 @@ export default async function handler(req: Request, res: Response) {
 
   if (req.method === 'GET') {
     try {
-      const { category, sortBy = 'interest', limit = '20', offset = '0' } = req.query;
+      const { category, sortBy = 'interest', limit = '20', offset = '0', period } = req.query;
 
       const limitNum = parseInt(limit as string, 10);
       const offsetNum = parseInt(offset as string, 10);
@@ -37,6 +37,22 @@ export default async function handler(req: Request, res: Response) {
         .eq('published', true)
         .eq('status', 'published')
         .range(offsetNum, offsetNum + limitNum - 1);
+
+      // Filter by active voting period (default behavior)
+      if (period !== 'all') {
+        // Look up the active period
+        const { data: activePeriod } = await supabase
+          .from('voting_periods')
+          .select('id')
+          .eq('status', 'active')
+          .order('period_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (activePeriod) {
+          query = query.eq('voting_period_id', activePeriod.id);
+        }
+      }
 
       // Filter by category
       if (category && category !== 'all') {

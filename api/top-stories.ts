@@ -48,8 +48,22 @@ export default async function handler(req: Request, res: Response) {
           startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       }
 
+      // Try to filter by active voting period first
+      let periodFilter: string | null = null;
+      const { data: activePeriod } = await supabase
+        .from('voting_periods')
+        .select('id')
+        .eq('status', 'active')
+        .order('period_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activePeriod) {
+        periodFilter = activePeriod.id;
+      }
+
       // Fetch articles with their engagement metrics
-      const { data: articles, error } = await supabase
+      let articlesQuery = supabase
         .from('news_articles')
         .select(`
           id,
@@ -69,9 +83,17 @@ export default async function handler(req: Request, res: Response) {
         `)
         .eq('published', true)
         .eq('status', 'published')
-        .gte('published_at', startDate.toISOString())
         .order('upvote_count', { ascending: false })
-        .limit(parseInt(limit as string, 10) * 2); // Fetch extra for sorting
+        .limit(parseInt(limit as string, 10) * 2);
+
+      // Filter by active period if available, otherwise fall back to date range
+      if (periodFilter) {
+        articlesQuery = articlesQuery.eq('voting_period_id', periodFilter);
+      } else {
+        articlesQuery = articlesQuery.gte('published_at', startDate.toISOString());
+      }
+
+      const { data: articles, error } = await articlesQuery;
 
       if (error) {
         console.error('Error fetching articles:', error);
