@@ -26,14 +26,17 @@ export default async function handler(req: Request, res: Response) {
 
   if (req.method === 'GET') {
     try {
-      const { category, sortBy = 'interest', limit = '20' } = req.query;
+      const { category, sortBy = 'interest', limit = '20', offset = '0' } = req.query;
+
+      const limitNum = parseInt(limit as string, 10);
+      const offsetNum = parseInt(offset as string, 10);
 
       let query = supabase
         .from('news_articles')
         .select('*')
         .eq('published', true)
         .eq('status', 'published')
-        .limit(parseInt(limit as string, 10));
+        .range(offsetNum, offsetNum + limitNum - 1);
 
       // Filter by category
       if (category && category !== 'all') {

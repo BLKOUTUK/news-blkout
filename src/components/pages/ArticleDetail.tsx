@@ -16,6 +16,8 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ articleId, onBack }) => {
 
   useEffect(() => {
     loadArticle();
+    const votedArticles = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
+    setVoted(votedArticles.includes(articleId));
   }, [articleId]);
 
   const loadArticle = async () => {
@@ -36,9 +38,30 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ articleId, onBack }) => {
   };
 
   const handleVote = async () => {
-    if (voted) return;
-    setVoted(true);
-    // TODO: Implement vote API call
+    if (!article) return;
+    try {
+      const response = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: article.id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setVoted(data.data.hasUpvoted);
+          const votedArticles = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
+          if (data.data.hasUpvoted) {
+            if (!votedArticles.includes(article.id)) votedArticles.push(article.id);
+          } else {
+            const idx = votedArticles.indexOf(article.id);
+            if (idx > -1) votedArticles.splice(idx, 1);
+          }
+          localStorage.setItem('blkout_voted_articles', JSON.stringify(votedArticles));
+        }
+      }
+    } catch (error) {
+      console.error('Vote error:', error);
+    }
   };
 
   const handleBookmark = () => {

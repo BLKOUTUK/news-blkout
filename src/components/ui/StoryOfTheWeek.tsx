@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, TrendingUp, Users, Share2, ThumbsUp, ExternalLink, Calendar } from 'lucide-react';
-import { formatRelativeTime, getWeekDateRange, formatPublishedDate } from '@/lib/utils';
+import { getWeekDateRange, formatPublishedDate } from '@/lib/utils';
 
 interface StoryData {
   id: string;
@@ -19,6 +19,65 @@ interface StoryData {
   comment_count: number;
   engagement_score: number;
 }
+
+const VoteButton: React.FC<{ storyId: string; initialCount: number }> = ({ storyId, initialCount }) => {
+  const [count, setCount] = useState(initialCount);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
+
+  useEffect(() => {
+    const voted = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
+    setHasVoted(voted.includes(storyId));
+  }, [storyId]);
+
+  const handleVote = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isVoting) return;
+    setIsVoting(true);
+    try {
+      const res = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: storyId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setHasVoted(data.data.hasUpvoted);
+          setCount(data.data.upvoteCount);
+          const voted = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
+          if (data.data.hasUpvoted) {
+            if (!voted.includes(storyId)) voted.push(storyId);
+          } else {
+            const idx = voted.indexOf(storyId);
+            if (idx > -1) voted.splice(idx, 1);
+          }
+          localStorage.setItem('blkout_voted_articles', JSON.stringify(voted));
+        }
+      }
+    } catch (err) {
+      console.error('Vote error:', err);
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleVote}
+      disabled={isVoting}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+        hasVoted
+          ? 'bg-liberation-sovereignty-gold text-black'
+          : 'bg-liberation-sovereignty-gold/10 text-liberation-sovereignty-gold border border-liberation-sovereignty-gold/30 hover:bg-liberation-sovereignty-gold hover:text-black'
+      } ${isVoting ? 'opacity-50' : ''}`}
+      title={hasVoted ? 'Remove vote' : 'Vote for this story'}
+    >
+      <ThumbsUp className={`h-3.5 w-3.5 ${hasVoted ? 'fill-current' : ''}`} />
+      <span>{count}</span>
+    </button>
+  );
+};
 
 interface StoryOfTheWeekProps {
   period?: 'day' | 'week' | 'month';
@@ -247,18 +306,18 @@ const StoryOfTheWeek: React.FC<StoryOfTheWeekProps> = ({
                       {story.title}
                     </h4>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      {/* Published date - now visible */}
                       <span className="text-gray-400">{formatPublishedDate(story.published_at)}</span>
-                      <span className="flex items-center gap-1">
-                        <ThumbsUp className="h-3 w-3" />
-                        {story.upvote_count}
-                      </span>
                       <span className="flex items-center gap-1">
                         <TrendingUp className="h-3 w-3" />
                         {Math.round(story.engagement_score)}
                       </span>
                       <span>{story.source_name}</span>
                     </div>
+                  </div>
+
+                  {/* Vote button */}
+                  <div className="flex-shrink-0" data-no-propagate>
+                    <VoteButton storyId={story.id} initialCount={story.upvote_count} />
                   </div>
                 </div>
               </div>

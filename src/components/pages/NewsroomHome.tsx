@@ -3,8 +3,6 @@ import {
   TrendingUp,
   Crown,
   Zap,
-  ExternalLink,
-  Calendar,
   Clock,
   ArrowRight,
   ThumbsUp,
@@ -12,7 +10,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import type { NewsArticle, ArticleCategory } from '@/types/newsroom';
-import { formatDate, formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/utils';
 import ArticleCard from '../ui/ArticleCard';
 import CategoryFilter from '../ui/CategoryFilter';
 import SortFilter from '../ui/SortFilter';
@@ -26,24 +24,36 @@ interface NewsroomHomeProps {
 
 type SortOption = 'interest' | 'recent' | 'weekly';
 
+const PAGE_SIZE = 20;
+
 const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<ArticleCategory | 'all'>('all');
   const [sortBy, setSortBy] = useState<SortOption>('interest');
 
   useEffect(() => {
-    loadArticles();
+    loadArticles(true);
   }, [selectedCategory, sortBy]);
 
-  const loadArticles = async () => {
-    setLoading(true);
+  const loadArticles = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+      setHasMore(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
+      const offset = reset ? 0 : articles.length;
       const params = new URLSearchParams({
         category: selectedCategory !== 'all' ? selectedCategory : '',
         sortBy,
         status: 'published',
-        limit: '20',
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
       });
 
       const response = await fetch(`/api/news?${params}`);
@@ -51,19 +61,29 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          setArticles(data.data.articles || []);
+          const newArticles = data.data.articles || [];
+          if (reset) {
+            setArticles(newArticles);
+          } else {
+            setArticles(prev => [...prev, ...newArticles]);
+          }
+          setHasMore(newArticles.length >= PAGE_SIZE);
         } else {
-          setArticles([]);
+          if (reset) setArticles([]);
+          setHasMore(false);
         }
       } else {
         console.error('Failed to fetch articles');
-        setArticles([]);
+        if (reset) setArticles([]);
+        setHasMore(false);
       }
     } catch (error) {
       console.error('Failed to load articles:', error);
-      setArticles([]);
+      if (reset) setArticles([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -320,6 +340,19 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                       />
                     ))}
                   </div>
+
+                  {/* Load More */}
+                  {hasMore && (
+                    <div className="text-center mt-10">
+                      <button
+                        onClick={() => loadArticles(false)}
+                        disabled={loadingMore}
+                        className="bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
+                      >
+                        {loadingMore ? 'Loading...' : 'Load More Stories'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
