@@ -28,23 +28,54 @@ interface NewsSource {
 }
 
 const RSS_SOURCES: NewsSource[] = [
-  // UK LGBTQ+ News
-  { name: 'PinkNews', url: 'https://www.pinknews.co.uk', feedUrl: 'https://www.pinknews.co.uk/feed/', category: 'community', priority: 'high', tags: ['lgbtq', 'uk', 'news'], region: 'uk', active: true },
+  // ── UK LGBTQ+ News ──
+  { name: 'PinkNews', url: 'https://www.pinknews.co.uk', feedUrl: 'https://www.thepinknews.com/feed/', category: 'community', priority: 'high', tags: ['lgbtq', 'uk', 'news'], region: 'uk', active: true },
   { name: 'Attitude', url: 'https://www.attitude.co.uk', feedUrl: 'https://www.attitude.co.uk/feed/', category: 'culture', priority: 'high', tags: ['lgbtq', 'uk', 'culture'], region: 'uk', active: true },
   { name: 'Gay Times', url: 'https://www.gaytimes.co.uk', feedUrl: 'https://www.gaytimes.co.uk/feed/', category: 'community', priority: 'high', tags: ['lgbtq', 'uk', 'news'], region: 'uk', active: true },
   { name: 'DIVA Magazine', url: 'https://divamag.co.uk', feedUrl: 'https://divamag.co.uk/feed/', category: 'culture', priority: 'medium', tags: ['lgbtq', 'uk', 'women', 'lesbian'], region: 'uk', active: true },
-  // Black UK Media
+  { name: 'Guardian LGBTQ+', url: 'https://www.theguardian.com/world/lgbt-rights', feedUrl: 'https://www.theguardian.com/world/lgbt-rights/rss', category: 'politics', priority: 'high', tags: ['lgbtq', 'uk', 'rights', 'news'], region: 'uk', active: true },
+
+  // ── UK Black Media ──
   { name: 'The Voice', url: 'https://www.voice-online.co.uk', feedUrl: 'https://www.voice-online.co.uk/feed/', category: 'community', priority: 'high', tags: ['black', 'uk', 'news', 'community'], region: 'uk', active: true },
   { name: 'Black Ballad', url: 'https://blackballad.co.uk', feedUrl: 'https://blackballad.co.uk/feed/', category: 'culture', priority: 'high', tags: ['black', 'women', 'uk', 'culture'], region: 'uk', active: true },
   { name: 'gal-dem', url: 'https://gal-dem.com', feedUrl: 'https://gal-dem.com/feed/', category: 'culture', priority: 'high', tags: ['black', 'women', 'uk', 'culture', 'lgbtq'], region: 'uk', active: true },
-  // LGBTQ+ News - Global
-  { name: 'Them', url: 'https://www.them.us', feedUrl: 'https://www.them.us/feed/rss', category: 'culture', priority: 'medium', tags: ['lgbtq', 'trans', 'nonbinary', 'culture'], region: 'us', active: true },
-  { name: 'Out Magazine', url: 'https://www.out.com', feedUrl: 'https://www.out.com/rss.xml', category: 'culture', priority: 'medium', tags: ['lgbtq', 'culture', 'entertainment'], region: 'us', active: true },
-  { name: 'The Advocate', url: 'https://www.advocate.com', feedUrl: 'https://www.advocate.com/rss.xml', category: 'politics', priority: 'medium', tags: ['lgbtq', 'politics', 'news'], region: 'us', active: true },
-  // Health & Wellbeing
+
+  // ── UK Orgs ──
   { name: 'Terrence Higgins Trust', url: 'https://www.tht.org.uk', feedUrl: 'https://www.tht.org.uk/feed', category: 'health', priority: 'high', tags: ['health', 'hiv', 'uk', 'lgbtq'], region: 'uk', active: true },
   { name: 'Stonewall UK', url: 'https://www.stonewall.org.uk', feedUrl: 'https://www.stonewall.org.uk/feed', category: 'politics', priority: 'high', tags: ['lgbtq', 'uk', 'rights', 'policy'], region: 'uk', active: true },
-  // Arts & Culture
+
+  // ── US LGBTQ+ News ──
+  { name: 'The Advocate', url: 'https://www.advocate.com', feedUrl: 'https://www.advocate.com/feed', category: 'politics', priority: 'medium', tags: ['lgbtq', 'politics', 'news'], region: 'us', active: true },
+  { name: 'Them', url: 'https://www.them.us', feedUrl: 'https://www.them.us/feed/rss', category: 'culture', priority: 'medium', tags: ['lgbtq', 'trans', 'nonbinary', 'culture'], region: 'us', active: true },
+  { name: 'Out Magazine', url: 'https://www.out.com', feedUrl: 'https://www.out.com/rss.xml', category: 'culture', priority: 'medium', tags: ['lgbtq', 'culture', 'entertainment'], region: 'us', active: true },
+  { name: 'LGBTQ Nation', url: 'https://www.lgbtqnation.com', feedUrl: 'https://www.lgbtqnation.com/feed/', category: 'politics', priority: 'medium', tags: ['lgbtq', 'news', 'politics'], region: 'us', active: true },
+  { name: 'Washington Blade', url: 'https://www.washingtonblade.com', feedUrl: 'https://www.washingtonblade.com/feed/', category: 'politics', priority: 'medium', tags: ['lgbtq', 'news', 'politics'], region: 'us', active: true },
+  { name: 'Queerty', url: 'https://www.queerty.com', feedUrl: 'https://www.queerty.com/feed', category: 'culture', priority: 'low', tags: ['lgbtq', 'culture', 'entertainment'], region: 'us', active: true },
+  { name: 'Instinct Magazine', url: 'https://instinctmagazine.com', feedUrl: 'https://instinctmagazine.com/feed/', category: 'culture', priority: 'low', tags: ['lgbtq', 'culture', 'entertainment'], region: 'us', active: true },
+
+  // ── US Black Media (need LGBTQ keyword match to pass filter) ──
+  { name: 'The Root', url: 'https://www.theroot.com', feedUrl: 'https://www.theroot.com/feed', category: 'community', priority: 'high', tags: ['black', 'news', 'culture'], region: 'us', active: true },
+  { name: 'Essence', url: 'https://www.essence.com', feedUrl: 'https://www.essence.com/feed/', category: 'culture', priority: 'high', tags: ['black', 'women', 'culture'], region: 'us', active: true },
+  { name: 'Blavity', url: 'https://blavity.com', feedUrl: 'https://cms.blavity.com/feed', category: 'culture', priority: 'medium', tags: ['black', 'culture', 'community'], region: 'us', active: true },
+
+  // ── Health (HIV/wellbeing — high intersectional overlap) ──
+  { name: 'The Body', url: 'https://www.thebody.com', feedUrl: 'https://www.thebody.com/feed', category: 'health', priority: 'high', tags: ['health', 'hiv', 'lgbtq', 'black'], region: 'us', active: true },
+
+  // ── Africa ──
+  { name: 'MambaOnline', url: 'https://www.mambaonline.com', feedUrl: 'https://www.mambaonline.com/feed/', category: 'community', priority: 'high', tags: ['lgbtq', 'black', 'african', 'news'], region: 'africa', active: true },
+  { name: 'Kuchu Times', url: 'https://www.kuchutimes.com', feedUrl: 'https://www.kuchutimes.com/feed/', category: 'community', priority: 'high', tags: ['lgbtq', 'black', 'african', 'news'], region: 'africa', active: true },
+  { name: 'Erasing 76 Crimes', url: 'https://76crimes.com', feedUrl: 'https://76crimes.com/feed/', category: 'politics', priority: 'high', tags: ['lgbtq', 'rights', 'african', 'caribbean', 'law'], region: 'global', active: true },
+  { name: 'Minority Africa', url: 'https://minorityafrica.org', feedUrl: 'https://minorityafrica.org/feed/', category: 'community', priority: 'medium', tags: ['lgbtq', 'black', 'african', 'news'], region: 'africa', active: true },
+  { name: 'Iranti', url: 'https://www.iranti.org.za', feedUrl: 'https://www.iranti.org.za/feed/', category: 'community', priority: 'medium', tags: ['lgbtq', 'trans', 'black', 'african'], region: 'africa', active: true },
+  { name: 'Africa Is a Country', url: 'https://africasacountry.com', feedUrl: 'https://africasacountry.com/feed', category: 'culture', priority: 'medium', tags: ['black', 'african', 'culture', 'politics'], region: 'africa', active: true },
+
+  // ── Caribbean & Global Rights ──
+  { name: 'Human Dignity Trust', url: 'https://www.humandignitytrust.org', feedUrl: 'https://www.humandignitytrust.org/feed/', category: 'politics', priority: 'high', tags: ['lgbtq', 'rights', 'caribbean', 'african', 'law'], region: 'global', active: true },
+  { name: 'Equality Jamaica', url: 'https://www.equalityjamaica.org', feedUrl: 'https://www.equalityjamaica.org/feed/', category: 'politics', priority: 'medium', tags: ['lgbtq', 'caribbean', 'rights', 'black'], region: 'caribbean', active: true },
+
+  // ── International LGBTQ+ ──
+  { name: 'Xtra Magazine', url: 'https://xtramagazine.com', feedUrl: 'https://xtramagazine.com/feed', category: 'culture', priority: 'medium', tags: ['lgbtq', 'culture', 'politics'], region: 'global', active: true },
+  { name: 'Star Observer', url: 'https://www.starobserver.com.au', feedUrl: 'https://www.starobserver.com.au/feed', category: 'community', priority: 'low', tags: ['lgbtq', 'news'], region: 'global', active: true },
   { name: 'Autostraddle', url: 'https://www.autostraddle.com', feedUrl: 'https://www.autostraddle.com/feed/', category: 'culture', priority: 'medium', tags: ['lgbtq', 'lesbian', 'queer', 'culture'], region: 'global', active: true },
 ];
 
@@ -107,51 +138,61 @@ function extractImage(item: any): string | undefined {
 function calculateRelevanceScore(title: string, content: string, sourceTags: string[]): number {
   const text = `${title} ${content}`.toLowerCase();
 
-  // Explicit Black LGBTQ+ intersectional terms - automatic high relevance
+  // Explicit Black LGBTQ+ intersectional terms — automatic high relevance
   const intersectionalTerms = [
     'black queer', 'black gay', 'black lgbtq', 'black trans', 'black lesbian',
     'qtipoc', 'qpoc', 'blkout', 'black pride', 'uk black pride',
     'african diaspora lgbtq', 'caribbean lgbtq', 'black bisexual',
-    'black nonbinary', 'black non-binary'
+    'black nonbinary', 'black non-binary', 'queer african', 'queer caribbean',
+    'lgbtq africa', 'lgbtq caribbean', 'lgbtq jamaica', 'lgbtq uganda',
+    'lgbtq nigeria', 'lgbtq kenya', 'lgbtq ghana', 'lgbtq south africa',
+    'gay africa', 'gay jamaica', 'gay uganda', 'gay nigeria',
+    'homophobia africa', 'homophobia caribbean', 'anti-gay africa',
+    'decriminali', // catches decriminalisation/decriminalization
+    'sodomy law', 'anti-homosexuality', 'conversion therapy africa',
   ];
 
-  // Check for explicit intersectional content - these always pass
+  // Check for explicit intersectional content — these always pass
   for (const term of intersectionalTerms) {
     if (text.includes(term)) return 100;
   }
 
-  // Check if source is tagged as both black AND lgbtq (like gal-dem)
+  // Check source tag composition
   const hasBlackTag = sourceTags.some(t => ['black', 'african', 'caribbean'].includes(t.toLowerCase()));
   const hasLgbtqTag = sourceTags.some(t => ['lgbtq', 'queer', 'gay', 'lesbian', 'trans'].includes(t.toLowerCase()));
   const isIntersectionalSource = hasBlackTag && hasLgbtqTag;
 
   // LGBTQ+ keywords
-  const lgbtqKeywords = ['lgbtq', 'queer', 'gay', 'lesbian', 'trans', 'bisexual', 'pride', 'nonbinary', 'non-binary', 'drag', 'same-sex'];
+  const lgbtqKeywords = ['lgbtq', 'queer', 'gay', 'lesbian', 'trans', 'bisexual', 'pride', 'nonbinary', 'non-binary', 'drag', 'same-sex', 'homosexual', 'homophobia', 'rainbow'];
   // Black community keywords
-  const blackKeywords = ['black', 'african', 'caribbean', 'windrush', 'diaspora', 'afro'];
+  const blackKeywords = ['black', 'african', 'caribbean', 'windrush', 'diaspora', 'afro', 'nigeria', 'uganda', 'kenya', 'ghana', 'south africa', 'jamaica', 'trinidad', 'barbados', 'guyana'];
 
   const hasLgbtqContent = lgbtqKeywords.some(kw => text.includes(kw));
   const hasBlackContent = blackKeywords.some(kw => text.includes(kw));
 
-  // REQUIRE BOTH: Article must mention both Black AND LGBTQ+ topics
-  // OR come from an intersectional source (tagged as both)
+  // BEST: Article explicitly covers both communities
   if (hasLgbtqContent && hasBlackContent) {
-    // Great - article explicitly covers both communities
     let score = 80;
     if (text.includes('uk') || text.includes('britain') || text.includes('london')) score += 10;
     return Math.min(100, score);
   }
 
+  // GOOD: Source is inherently intersectional (tagged both black + lgbtq)
+  // e.g. MambaOnline, Kuchu Times, gal-dem, The Body
+  // These sources' LGBTQ content IS about Black people by default
   if (isIntersectionalSource) {
-    // Source is known for intersectional content (e.g., gal-dem)
-    // Accept articles that mention either community
-    if (hasLgbtqContent || hasBlackContent) {
-      return 70;
-    }
+    if (hasLgbtqContent || hasBlackContent) return 70;
+    // Even general articles from these sources have community value
+    return 40;
   }
 
-  // Articles that only cover one community without the other - reject
-  // This filters out generic LGBTQ+ news and generic Black news
+  // OK: LGBTQ article from a Black source (e.g. The Root covering Pride)
+  if (hasBlackTag && hasLgbtqContent) return 75;
+
+  // OK: Black article from an LGBTQ source (e.g. PinkNews covering racism)
+  if (hasLgbtqTag && hasBlackContent) return 75;
+
+  // Articles that only cover one community without the other — reject
   return 0;
 }
 
