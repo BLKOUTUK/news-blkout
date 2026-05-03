@@ -3,10 +3,12 @@ import { Play, Film, Calendar } from 'lucide-react';
 import { latestDigest } from '@/config/aivorDigest';
 
 const AIvorDigest: React.FC = () => {
-  const { weekLabel, videoUrl, summary, youtubeChannelUrl, thumbnailUrl } = latestDigest;
-  const hasVideo = videoUrl.trim().length > 0;
-  const youtubeId = hasVideo ? extractYouTubeId(videoUrl) : null;
+  const { weekLabel, videoUrl, summary, youtubeChannelUrl, thumbnailUrl, format, publishesAt } = latestDigest;
   const portrait = thumbnailUrl || '/images/aivor-news.jpg';
+  const youtubeId = videoUrl.trim() ? extractYouTubeId(videoUrl) : null;
+  const isLive = !publishesAt || Date.now() >= new Date(publishesAt).getTime();
+  const showEmbed = !!youtubeId && isLive;
+  const isShort = format === 'short';
 
   return (
     <section className="relative border border-liberation-sovereignty-gold/30 bg-gradient-to-br from-black via-black/95 to-liberation-sovereignty-gold/5 rounded-2xl overflow-hidden">
@@ -39,8 +41,8 @@ const AIvorDigest: React.FC = () => {
             </p>
           </div>
 
-          {hasVideo && youtubeId ? (
-            <div className="aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+          {showEmbed ? (
+            <div className={`${isShort ? 'aspect-[9/16] max-w-[360px] mx-auto md:mx-0' : 'aspect-video'} rounded-lg overflow-hidden border border-white/10 bg-black`}>
               <iframe
                 src={`https://www.youtube.com/embed/${youtubeId}`}
                 title={`AIvor digest — ${weekLabel}`}
@@ -53,7 +55,7 @@ const AIvorDigest: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-liberation-sovereignty-gold/10 border border-liberation-sovereignty-gold/30 text-sm text-liberation-sovereignty-gold">
                 <Play size={14} />
-                <span className="font-medium">Next digest drops Sunday</span>
+                <span className="font-medium">{publishesAt && !isLive ? 'Drops 4 May, 12:01am BST' : 'Next digest drops Sunday'}</span>
               </div>
               <a
                 href={youtubeChannelUrl}
@@ -74,6 +76,7 @@ const AIvorDigest: React.FC = () => {
 
 function extractYouTubeId(url: string): string | null {
   const patterns = [
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
     /youtube\.com\/watch\?v=([A-Za-z0-9_-]{6,})/,
     /youtu\.be\/([A-Za-z0-9_-]{6,})/,
     /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
