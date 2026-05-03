@@ -137,6 +137,19 @@ module.exports = {
           900: '#581c87',
           950: '#3b0764',
         },
+
+        // ================================================================
+        // SECTION ACCENTS — BLKOUT One Platform Design (locked 26 Apr 2026)
+        // Apply via `bg-news`, `text-events`, `border-voices` etc.
+        // See docs/DESIGN_COLOUR_ARCHITECTURE.md §5.
+        // ================================================================
+        news:    '#9B4DCA',  // purple — news.blkoutuk.com
+        events:  '#FFE600',  // lemon — events.blkoutuk.com (NEW)
+        voices:  '#00A86B',  // Pan-African green — voices.blkoutuk.com
+        members: '#E31E24',  // Pan-African red — /account /about
+        shop:    '#FF8C00',  // pride orange — /shop
+        aivor:   '#5B9BD5',  // broadcast blue — AIvor channel (NEW)
+        cf:      '#FF1493',  // ACT UP pink — critical.blkoutuk.com (NEW)
       },
 
       // ================================================================
@@ -149,6 +162,12 @@ module.exports = {
         // Legacy aliases
         liberation: ['Inter', 'system-ui', 'sans-serif'],
         celebration: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        // BLKOUT One Platform Design signature fonts (locked 26 Apr 2026).
+        // Adopt by adding Google Fonts <link> in index.html, then `font-signature`,
+        // `font-disrupt`, `font-meta` in components.
+        signature: ['Work Sans', 'Inter', 'system-ui', 'sans-serif'],
+        disrupt:   ['Fraunces', 'Georgia', 'serif'],
+        meta:      ['IBM Plex Mono', 'JetBrains Mono', 'monospace'],
       },
 
       fontSize: {
@@ -208,6 +227,8 @@ module.exports = {
         'blkout': '0.75rem',
         'blkout-lg': '1rem',
         'blkout-xl': '1.5rem',
+        // BLKOUT One Platform Design — sharp edges baseline (locked 26 Apr 2026).
+        'sharp': '0',
       },
 
       // ================================================================
