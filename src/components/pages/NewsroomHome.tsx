@@ -105,12 +105,15 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+    <div className="min-h-screen bg-black">
+      {/* BLKOUT One Platform Design — section accent bar (news = purple) */}
+      <div className="h-1 bg-news" aria-hidden="true"></div>
+
       {/* First-time visitor onboarding modal (handles all education) */}
       <VotingOnboardingModal />
 
       {/* Compact Hero — period countdown integrated, gets users to content fast */}
-      <section className="relative min-h-[40vh] overflow-hidden border-b border-white/10">
+      <section className="relative min-h-[40vh] overflow-hidden border-b border-white/10 noise">
         {/* Background video */}
         <video
           autoPlay
