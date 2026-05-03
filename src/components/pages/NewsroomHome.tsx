@@ -197,11 +197,11 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
               {/* Votable article grid */}
               {regularArticles.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center justify-between mb-5 border-l-4 border-news pl-4">
                     <h2 className="text-lg font-bold text-white uppercase tracking-wide">
                       All Stories — Vote Now
                     </h2>
-                    <div className="flex items-center gap-1 text-xs text-liberation-sovereignty-gold">
+                    <div className="flex items-center gap-1 text-xs text-news">
                       <Zap className="h-3.5 w-3.5" />
                       <span className="font-medium">No login needed</span>
                     </div>

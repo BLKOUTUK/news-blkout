@@ -11,7 +11,7 @@ const AIvorDigest: React.FC = () => {
   const isShort = format === 'short';
 
   return (
-    <section className="relative border border-liberation-sovereignty-gold/30 bg-gradient-to-br from-black via-black/95 to-liberation-sovereignty-gold/5 rounded-2xl overflow-hidden">
+    <section className="relative border border-news/30 bg-black rounded-2xl overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-0">
         <div className="relative bg-black/60 flex items-stretch">
           <img
@@ -25,7 +25,7 @@ const AIvorDigest: React.FC = () => {
         <div className="p-6 md:p-8 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs uppercase tracking-[0.18em] text-liberation-sovereignty-gold font-bold">
+              <span className="text-xs uppercase tracking-[0.18em] text-news font-bold">
                 AIvor Weekly Digest
               </span>
               <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -53,7 +53,7 @@ const AIvorDigest: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-liberation-sovereignty-gold/10 border border-liberation-sovereignty-gold/30 text-sm text-liberation-sovereignty-gold">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-news/10 border border-news/30 text-sm text-news">
                 <Play size={14} />
                 <span className="font-medium">{publishesAt && !isLive ? 'Drops 4 May, 12:01am BST' : 'Next digest drops Sunday'}</span>
               </div>
