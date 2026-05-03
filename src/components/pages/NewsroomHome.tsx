@@ -15,6 +15,7 @@ import SortFilter from '../ui/SortFilter';
 import NewsletterSignup from '../ui/NewsletterSignup';
 import StoryOfTheWeek from '../ui/StoryOfTheWeek';
 import VotingOnboardingModal from '../ui/VotingOnboardingModal';
+import AIvorDigest from '../ui/AIvorDigest';
 
 interface NewsroomHomeProps {
   onArticleClick: (articleId: string) => void;
@@ -184,6 +185,9 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
             </div>
           ) : (
             <div className="space-y-10">
+              {/* AIvor weekly digest — video / pre-state */}
+              <AIvorDigest />
+
               {/* Current leaderboard */}
               <StoryOfTheWeek period="week" limit={10} />
 
