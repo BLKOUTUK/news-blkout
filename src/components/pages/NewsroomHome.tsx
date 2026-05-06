@@ -15,6 +15,7 @@ import SortFilter from '../ui/SortFilter';
 import NewsletterSignup from '../ui/NewsletterSignup';
 import StoryOfTheWeek from '../ui/StoryOfTheWeek';
 import VotingOnboardingModal from '../ui/VotingOnboardingModal';
+import FoundationLayer from '../foundation/FoundationLayer';
 import AIvorDigest from '../ui/AIvorDigest';
 
 interface NewsroomHomeProps {
@@ -268,9 +269,13 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
         </div>
       </section>
 
-      {/* Newsletter Signup */}
-      <section className="py-12 px-4 md:px-8 border-t border-white/10 bg-black/30">
-        <NewsletterSignup />
+      {/* Newsletter Signup — joy-register foundation imagery layer at 18% (community invitation) */}
+      <section className="relative py-12 px-4 md:px-8 border-t border-white/10 overflow-hidden">
+        <FoundationLayer category="joy" seed="news-newsletter-cta" opacity={0.18} />
+        <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+        <div className="relative z-10">
+          <NewsletterSignup />
+        </div>
       </section>
     </div>
   );
