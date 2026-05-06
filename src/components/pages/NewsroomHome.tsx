@@ -106,8 +106,7 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* BLKOUT One Platform Design — section accent bar (news = purple) */}
-      <div className="h-1 bg-news" aria-hidden="true"></div>
+      {/* Section accent bar lives in App.tsx now (Round 2 chrome — applies on every news page, not just home). */}
 
       {/* First-time visitor onboarding modal (handles all education) */}
       <VotingOnboardingModal />
