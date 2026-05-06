@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Crown } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import NewsroomHome from './components/pages/NewsroomHome';
 import ArticleDetail from './components/pages/ArticleDetail';
 import WinnersPage from './components/pages/WinnersPage';
@@ -74,10 +74,6 @@ function App() {
     window.history.pushState({}, '', '/');
   };
 
-  const navigateToPlatform = () => {
-    window.location.href = 'https://blkoutuk.com';
-  };
-
   const navigateToSubmit = () => {
     setCurrentPage('submit');
     window.history.pushState({}, '', '/submit');
@@ -95,46 +91,74 @@ function App() {
 
   return (
     <div className="min-h-screen bg-liberation-black-power text-white flex flex-col">
-      {/* Global Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-black/90 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={navigateToPlatform}
-              className="flex items-center gap-2 text-gray-400 hover:text-liberation-gold-divine transition-colors"
-              aria-label="Return to BLKOUT platform"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="hidden sm:inline">Back to Platform</span>
-            </button>
+      {/* Section identity bar — News = purple-deep (Round 2 chrome, mirrors community-platform) */}
+      <div className="sticky top-0 z-40 h-1 bg-liberation-pride-purple-deep" aria-hidden />
 
-            <div className="flex items-center gap-3">
+      {/* Global Navigation — Option C hybrid 5-button cross-app nav. Each button carries its own
+          section-accent underline; News is current and shows the active state. */}
+      <nav className="sticky top-1 z-40 bg-liberation-black-power border-b border-liberation-gold-divine/30 shadow-lg backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex items-center justify-between h-16 md:h-18">
+            {/* Logo + brand */}
+            <button onClick={navigateToHome} className="flex items-center gap-3" aria-label="News home">
               <img
                 src="/images/blkoutlogo_wht_transparent.png"
-                alt="BLKOUT Logo"
-                className="h-10 md:h-12 w-auto"
+                alt="BLKOUT"
+                className="h-10 md:h-12 w-auto hover:scale-105 transition-transform drop-shadow-lg"
               />
-              <div className="text-left">
-                <h1 className="text-lg md:text-xl font-black leading-tight">
-                  <span className="text-liberation-gold-divine">NEWS THAT MATTERS</span>
-                </h1>
-                <p className="text-xs text-gray-400 hidden md:block">
-                  News reports and analysis through a Black Queer lens
-                </p>
+              <div className="hidden md:block text-left border-l border-liberation-gold-divine/30 pl-3">
+                <div className="font-signature font-black text-lg tracking-tight uppercase text-liberation-gold-divine leading-none">News That Matters</div>
+                <p className="text-xs text-gray-400 font-disrupt italic mt-1">through a Black queer lens</p>
               </div>
+            </button>
+
+            {/* Desktop cross-app nav — News is current; others hover-accent per section. */}
+            <div className="hidden lg:flex items-center gap-4">
+              <a
+                href="https://blkoutuk.com"
+                className="px-4 py-2 text-base font-signature font-black uppercase tracking-tight transition-colors duration-200 border-b-2 border-transparent text-gray-200 hover:text-liberation-gold-divine hover:border-liberation-gold-divine/60"
+              >
+                Home
+              </a>
+              <a
+                href="https://events.blkoutuk.com"
+                className="px-4 py-2 text-base font-signature font-black uppercase tracking-tight transition-colors duration-200 border-b-2 border-transparent text-gray-200 hover:text-liberation-events hover:border-liberation-events/60"
+              >
+                Events
+              </a>
+              <button
+                onClick={navigateToHome}
+                className="px-4 py-2 text-base font-signature font-black uppercase tracking-tight transition-colors duration-200 border-b-2 text-liberation-pride-purple-deep border-liberation-pride-purple-deep"
+                aria-current="page"
+              >
+                News
+              </button>
+              <a
+                href="https://blkoutuk.com/intro"
+                className="px-4 py-2 text-base font-signature font-black uppercase tracking-tight transition-colors duration-200 border-b-2 border-transparent text-gray-200 hover:text-liberation-aivor hover:border-liberation-aivor/60"
+              >
+                AIvor
+              </a>
+              <a
+                href="https://voices.blkoutuk.cloud"
+                className="px-4 py-2 text-base font-signature font-black uppercase tracking-tight transition-colors duration-200 border-b-2 border-transparent text-gray-200 hover:text-liberation-pan-african-green hover:border-liberation-pan-african-green/60"
+              >
+                Voices
+              </a>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* News-specific actions on the right of the nav. */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={navigateToWinners}
-                className="flex items-center gap-1.5 px-3 py-2 text-gray-400 hover:text-liberation-gold-divine transition-colors text-sm font-medium"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-bold uppercase tracking-wider transition-colors duration-200 border-b-2 border-transparent text-gray-300 hover:text-liberation-pride-purple-deep hover:border-liberation-pride-purple-deep/60"
               >
                 <Crown className="h-4 w-4" />
-                <span className="hidden sm:inline">Top Stories</span>
+                Top Stories
               </button>
               <button
                 onClick={navigateToSubmit}
-                className="px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors text-sm"
+                className="px-4 py-2 bg-liberation-pride-purple-deep text-white font-signature font-black uppercase tracking-wider text-sm hover:bg-liberation-pride-purple transition-colors border border-liberation-pride-purple-deep"
               >
                 Submit Story
               </button>
