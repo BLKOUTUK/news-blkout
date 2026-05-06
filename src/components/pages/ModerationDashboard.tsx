@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, Loader2, ExternalLink, Download, Edit2, Save, X as XIcon, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { API_ENDPOINTS } from '@/config/api';
 
 interface QueueItem {
   id: string;
@@ -82,16 +83,30 @@ const ModerationDashboard: React.FC = () => {
 
   const callModerateApi = async (action: string, itemId: string, edits?: Partial<QueueItem>) => {
     try {
-      const response = await fetch('/api/moderate', {
+      // Routes through IVOR Core (ivor.blkoutuk.cloud) — not the news-blkout SPA.
+      // Calling a relative `/api/moderate` here returned the SPA catch-all
+      // `index.html` and the JSON.parse blew up on `<!doctype html>`.
+      const response = await fetch(API_ENDPOINTS.NEWS_MODERATE(itemId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, itemId, edits }),
+        // articleId is in the URL — body carries action + edits only.
+        body: JSON.stringify({ action, edits }),
       });
 
-      const result = await response.json();
+      // Surface non-JSON responses (HTML error pages, SPA fallback) with a useful
+      // message instead of the cryptic "Unexpected token '<'".
+      const text = await response.text();
+      let result: any;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error(
+          `${response.status} ${response.statusText} — non-JSON response (likely SPA fallback or gateway error). Body starts: ${text.slice(0, 80)}`
+        );
+      }
 
-      if (!result.success) {
-        throw new Error(result.error || 'API call failed');
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || result.message || `API ${response.status}`);
       }
 
       return result;
