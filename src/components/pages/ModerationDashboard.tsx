@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, Loader2, ExternalLink, Download, Edit2, Save, X as XIcon, Trash2 } from 'lucide-react';
+import { Loader2, ExternalLink, Download, Edit2, Save, X as XIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { API_ENDPOINTS } from '@/config/api';
+
+const PAGE_SIZE = 15;
 
 interface QueueItem {
   id: string;
@@ -10,138 +12,127 @@ interface QueueItem {
   excerpt: string;
   content: string;
   category: string;
-  status: string;
-  type: string;
-  submitted_at: string;
-  submitted_by: string;
+  ingested_at: string;
+  author: string;
   votes: number;
 }
 
+type Mark = 'approve' | 'reject';
+
 const ModerationDashboard: React.FC = () => {
-  const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
+  const [articles, setArticles] = useState<QueueItem[]>([]);
+  const [marks, setMarks] = useState<Record<string, Mark>>({});
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [applying, setApplying] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<QueueItem>>({});
 
   useEffect(() => {
-    fetchQueueItems();
-  }, [filter]);
+    fetchReviewQueue();
+  }, []);
 
-  const fetchQueueItems = async () => {
+  const fetchReviewQueue = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('news_articles')
-        .select('id, title, source_url, excerpt, content, category, status, published_at, author, total_votes')
+        .select('id, title, source_url, excerpt, content, category, created_at, author, total_votes')
+        .eq('status', 'review')
         .order('created_at', { ascending: false });
-
-      // Map filter to status field
-      if (filter !== 'all') {
-        const statusMap: Record<string, string> = {
-          'pending': 'review',      // review status = pending moderation
-          'approved': 'published',  // published status = approved
-          'rejected': 'archived'    // archived status = rejected
-        };
-        query = query.eq('status', statusMap[filter]);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
 
-      // Map news_articles to QueueItem format
-      const mappedItems: QueueItem[] = (data || []).map(article => {
-        // Map database status back to UI status
-        let uiStatus = 'pending';
-        if (article.status === 'published') uiStatus = 'approved';
-        else if (article.status === 'archived') uiStatus = 'rejected';
-        else if (article.status === 'review') uiStatus = 'pending';
-
-        return {
-          id: article.id,
-          title: article.title,
-          url: article.source_url || '',
-          excerpt: article.excerpt || '',
-          content: article.content || '',
-          category: article.category,
-          status: uiStatus,
-          type: 'news',
-          submitted_at: article.published_at || article.created_at,
-          submitted_by: article.author,
-          votes: article.total_votes || 0
-        };
-      });
-
-      setQueueItems(mappedItems);
+      setArticles(
+        (data || []).map((a) => ({
+          id: a.id,
+          title: a.title,
+          url: a.source_url || '',
+          excerpt: a.excerpt || '',
+          content: a.content || '',
+          category: a.category,
+          ingested_at: a.created_at,
+          author: a.author,
+          votes: a.total_votes || 0,
+        }))
+      );
     } catch (error) {
-      console.error('Error fetching queue:', error);
+      console.error('Error fetching review queue:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const callModerateApi = async (action: string, itemId: string, edits?: Partial<QueueItem>) => {
+  // Tick a checkbox. Approve and Reject are mutually exclusive; ticking the
+  // active mark again clears it (story stays in review, untouched).
+  const toggleMark = (id: string, kind: Mark) => {
+    setMarks((prev) => {
+      const next = { ...prev };
+      if (next[id] === kind) delete next[id];
+      else next[id] = kind;
+      return next;
+    });
+  };
+
+  // Send one moderation action through IVOR Core. Returns a result, never throws.
+  const moderateOne = async (
+    action: 'approve' | 'reject' | 'edit',
+    id: string,
+    edits?: Partial<QueueItem>
+  ): Promise<{ id: string; ok: boolean; error: string | null }> => {
     try {
-      // Routes through IVOR Core (ivor.blkoutuk.cloud) — not the news-blkout SPA.
-      // Calling a relative `/api/moderate` here returned the SPA catch-all
-      // `index.html` and the JSON.parse blew up on `<!doctype html>`.
-      const response = await fetch(API_ENDPOINTS.NEWS_MODERATE(itemId), {
+      const res = await fetch(API_ENDPOINTS.NEWS_MODERATE(id), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // articleId is in the URL — body carries action + edits only.
         body: JSON.stringify({ action, edits }),
       });
-
-      // Surface non-JSON responses (HTML error pages, SPA fallback) with a useful
-      // message instead of the cryptic "Unexpected token '<'".
-      const text = await response.text();
-      let result: any;
+      const text = await res.text();
+      let json: any = null;
       try {
-        result = JSON.parse(text);
+        json = JSON.parse(text);
       } catch {
-        throw new Error(
-          `${response.status} ${response.statusText} — non-JSON response (likely SPA fallback or gateway error). Body starts: ${text.slice(0, 80)}`
-        );
+        return { id, ok: false, error: `${res.status} — non-JSON response: ${text.slice(0, 60)}` };
       }
-
-      if (!response.ok || result.success === false) {
-        throw new Error(result.error || result.message || `API ${response.status}`);
+      if (!res.ok || json?.success === false) {
+        return { id, ok: false, error: json?.error || json?.message || `API ${res.status}` };
       }
-
-      return result;
+      return { id, ok: true, error: null };
     } catch (error: any) {
-      console.error(`Error with action ${action}:`, error);
-      alert(`Failed to ${action} item: ${error.message}`);
-      return null;
+      return { id, ok: false, error: error.message || 'Request failed' };
     }
   };
 
-  const handleApprove = async (item: QueueItem) => {
-    const result = await callModerateApi('approve', item.id);
-    if (result) {
-      alert('Article approved and published!');
-      fetchQueueItems();
-    }
-  };
+  // Apply every ticked row in one batch — the moderator waits once, not per story.
+  const applyMarked = async () => {
+    const entries = Object.entries(marks) as [string, Mark][];
+    if (entries.length === 0) return;
 
-  const handleReject = async (item: QueueItem) => {
-    const result = await callModerateApi('reject', item.id);
-    if (result) {
-      alert('Article rejected and removed from queue');
-      fetchQueueItems();
-    }
-  };
+    setApplying(true);
+    setSummary(null);
 
-  const handleDelete = async (item: QueueItem) => {
-    if (!confirm(`Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.`)) {
-      return;
+    const results = await Promise.all(entries.map(([id, action]) => moderateOne(action, id)));
+
+    const okIds = new Set(results.filter((r) => r.ok).map((r) => r.id));
+    const approved = entries.filter(([id, a]) => okIds.has(id) && a === 'approve').length;
+    const rejected = entries.filter(([id, a]) => okIds.has(id) && a === 'reject').length;
+    const failed = results.filter((r) => !r.ok);
+
+    // Drop applied rows; leave failures and unmarked rows in place.
+    setArticles((prev) => prev.filter((a) => !okIds.has(a.id)));
+    setMarks((prev) => {
+      const next = { ...prev };
+      okIds.forEach((id) => delete next[id]);
+      return next;
+    });
+
+    let msg = `${approved} published · ${rejected} rejected`;
+    if (failed.length) {
+      msg += ` · ${failed.length} failed (${failed[0].error})`;
+      console.error('Moderation failures:', failed);
     }
-    const result = await callModerateApi('delete', item.id);
-    if (result) {
-      alert('Article permanently deleted');
-      fetchQueueItems();
-    }
+    setSummary(msg);
+    setApplying(false);
   };
 
   const startEdit = (item: QueueItem) => {
@@ -161,312 +152,242 @@ const ModerationDashboard: React.FC = () => {
   };
 
   const saveEdit = async (item: QueueItem) => {
-    const result = await callModerateApi('edit', item.id, editForm);
-    if (result) {
-      alert('Article updated successfully');
+    const result = await moderateOne('edit', item.id, editForm);
+    if (result.ok) {
+      setArticles((prev) =>
+        prev.map((a) => (a.id === item.id ? { ...a, ...editForm } : a))
+      );
       setEditingId(null);
       setEditForm({});
-      fetchQueueItems();
+    } else {
+      alert(`Edit failed: ${result.error}`);
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
+  const pageClamped = Math.min(page, totalPages - 1);
+  const pageItems = articles.slice(pageClamped * PAGE_SIZE, pageClamped * PAGE_SIZE + PAGE_SIZE);
+  const markedCount = Object.keys(marks).length;
+
   return (
-    <div className="min-h-screen bg-liberation-black-power p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-liberation-black-power p-6 pb-28">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-liberation-gold-divine mb-2">
-                Moderation Dashboard
-              </h1>
-              <p className="text-gray-400">Review and approve community submissions</p>
-            </div>
-
-            {/* Chrome Extension Download - v2.2.2 (Content Extraction Fixed) */}
-            <a
-              href="/blkout-moderator-tools-v2.2.2-fixed.zip"
-              download="blkout-moderator-tools-v2.2.2-fixed.zip"
-              className="flex items-center gap-2 px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download Extension v2.2.2
-            </a>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-liberation-gold-divine mb-1">
+              Moderation Queue
+            </h1>
+            <p className="text-gray-400">
+              {loading ? 'Loading…' : `${articles.length} stories awaiting review`}
+            </p>
           </div>
-
-          {/* Extension Info Banner - v2.2.2 */}
-          <div className="mt-4 p-4 bg-gray-800/50 border border-liberation-gold-divine/20 rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-liberation-gold-divine/20 rounded-md">
-                <Download className="w-5 h-5 text-liberation-gold-divine" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-white mb-1">BLKOUT Moderator Tools Extension v2.2.2</h3>
-                <p className="text-sm text-gray-400 mb-2">
-                  <strong className="text-liberation-gold-divine">✅ FIXED:</strong> Content extraction now working! Enhanced with schema.org and Twitter Card support.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                  <div className="flex items-center text-xs text-gray-300">
-                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Event-specific fields (date, location, capacity)
-                  </div>
-                  <div className="flex items-center text-xs text-gray-300">
-                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Smart content type detection
-                  </div>
-                  <div className="flex items-center text-xs text-gray-300">
-                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Intelligent API routing (news/events)
-                  </div>
-                  <div className="flex items-center text-xs text-gray-300">
-                    <svg className="w-4 h-4 text-liberation-gold-divine mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Auto-extraction with content warnings
-                  </div>
-                </div>
-                <a
-                  href="/blkout-moderator-tools-v2.2.2-fixed.zip"
-                  download="blkout-moderator-tools-v2.2.2-fixed.zip"
-                  className="text-sm text-liberation-gold-divine hover:underline inline-flex items-center gap-1 font-medium"
-                >
-                  Download Extension v2.2.2 <ExternalLink className="w-3 h-3" />
-                </a>
-                <p className="text-xs text-gray-500 mt-2">
-                  Installation: Extract ZIP → chrome://extensions → Enable Developer mode → Load unpacked
-                </p>
-              </div>
-            </div>
-          </div>
+          <a
+            href="/blkout-moderator-tools-v2.2.2-fixed.zip"
+            download="blkout-moderator-tools-v2.2.2-fixed.zip"
+            className="flex items-center gap-2 px-4 py-2 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold transition-colors whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" />
+            Extension v2.2.2
+          </a>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6">
-          {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-md font-medium capitalize transition-colors ${
-                filter === status
-                  ? 'bg-liberation-gold-divine text-black'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-
-        {/* Queue Items */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-liberation-gold-divine animate-spin" />
-          </div>
-        ) : queueItems.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No items in {filter} queue</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {queueItems.map((item) => (
-              <div
-                key={item.id}
-                className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-liberation-gold-divine/30 transition-colors"
-              >
-                {editingId === item.id ? (
-                  // Edit Mode
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
-                      <input
-                        type="text"
-                        value={editForm.title || ''}
-                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Excerpt</label>
-                      <textarea
-                        value={editForm.excerpt || ''}
-                        onChange={(e) => setEditForm({ ...editForm, excerpt: e.target.value })}
-                        rows={3}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Content</label>
-                      <textarea
-                        value={editForm.content || ''}
-                        onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                        rows={6}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
-                        <select
-                          value={editForm.category || ''}
-                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
-                        >
-                          <option value="liberation">Liberation</option>
-                          <option value="community">Community</option>
-                          <option value="politics">Politics</option>
-                          <option value="culture">Culture</option>
-                          <option value="economics">Economics</option>
-                          <option value="health">Health</option>
-                          <option value="technology">Technology</option>
-                          <option value="opinion">Opinion</option>
-                          <option value="analysis">Analysis</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Source URL</label>
-                        <input
-                          type="url"
-                          value={editForm.url || ''}
-                          onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={cancelEdit}
-                        className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors inline-flex items-center gap-2"
-                      >
-                        <XIcon className="w-4 h-4" />
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => saveEdit(item)}
-                        className="px-4 py-2 bg-liberation-gold-divine text-black rounded-md hover:bg-liberation-sovereignty-gold transition-colors inline-flex items-center gap-2"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save Changes
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  // View Mode
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="px-2 py-1 text-xs font-medium rounded-md bg-liberation-gold-divine/20 text-liberation-gold-divine capitalize">
-                          {item.type}
-                        </span>
-                        <span className="px-2 py-1 text-xs font-medium rounded-md bg-gray-800 text-gray-300 capitalize">
-                          {item.category}
-                        </span>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-md ${
-                          item.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
-                          item.status === 'approved' ? 'bg-green-500/20 text-green-500' :
-                          'bg-red-500/20 text-red-500'
-                        }`}>
-                          {item.status}
-                        </span>
-                      </div>
-
-                      <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-
-                      {item.excerpt && (
-                        <p className="text-gray-400 mb-3 line-clamp-2">{item.excerpt}</p>
-                      )}
-
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>Submitted: {new Date(item.submitted_at).toLocaleDateString()}</span>
-                        <span>By: {item.submitted_by}</span>
-                        {item.votes > 0 && <span>Votes: {item.votes}</span>}
-                      </div>
-
-                      {item.url && (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 mt-3 text-sm text-liberation-gold-divine hover:underline"
-                        >
-                          View Source <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    {item.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => startEdit(item)}
-                          className="p-2 bg-blue-500/20 text-blue-500 rounded-md hover:bg-blue-500/30 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleApprove(item)}
-                          className="p-2 bg-green-500/20 text-green-500 rounded-md hover:bg-green-500/30 transition-colors"
-                          title="Approve"
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleReject(item)}
-                          className="p-2 bg-red-500/20 text-red-500 rounded-md hover:bg-red-500/30 transition-colors"
-                          title="Reject"
-                        >
-                          <XCircle className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-                    {item.status === 'approved' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => startEdit(item)}
-                          className="p-2 bg-blue-500/20 text-blue-500 rounded-md hover:bg-blue-500/30 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item)}
-                          className="p-2 bg-red-500/20 text-red-500 rounded-md hover:bg-red-500/30 transition-colors"
-                          title="Delete permanently"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-                    {item.status === 'rejected' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDelete(item)}
-                          className="p-2 bg-red-500/20 text-red-500 rounded-md hover:bg-red-500/30 transition-colors"
-                          title="Delete permanently"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+        {summary && (
+          <div className="mb-4 p-3 bg-liberation-gold-divine/10 border border-liberation-gold-divine/30 rounded-md text-sm text-liberation-gold-divine">
+            {summary}
           </div>
         )}
+
+        {/* Queue */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 text-liberation-gold-divine animate-spin" />
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <p>Queue clear — nothing awaiting review.</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {pageItems.map((item) => {
+                const mark = marks[item.id];
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-gray-900 border rounded-lg p-4 transition-colors ${
+                      mark === 'approve'
+                        ? 'border-green-500/60'
+                        : mark === 'reject'
+                        ? 'border-red-500/50'
+                        : 'border-gray-800'
+                    }`}
+                  >
+                    {editingId === item.id ? (
+                      // Edit mode
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={editForm.title || ''}
+                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                          placeholder="Title"
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
+                        />
+                        <textarea
+                          value={editForm.excerpt || ''}
+                          onChange={(e) => setEditForm({ ...editForm, excerpt: e.target.value })}
+                          placeholder="Excerpt"
+                          rows={2}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
+                        />
+                        <textarea
+                          value={editForm.content || ''}
+                          onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                          placeholder="Content"
+                          rows={5}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <select
+                            value={editForm.category || ''}
+                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
+                          >
+                            {['liberation', 'community', 'politics', 'culture', 'economics', 'health', 'technology', 'opinion', 'analysis'].map((c) => (
+                              <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="url"
+                            value={editForm.url || ''}
+                            onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                            placeholder="Source URL"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-liberation-gold-divine focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={cancelEdit}
+                            className="px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors inline-flex items-center gap-1.5 text-sm"
+                          >
+                            <XIcon className="w-4 h-4" /> Cancel
+                          </button>
+                          <button
+                            onClick={() => saveEdit(item)}
+                            className="px-3 py-1.5 bg-liberation-gold-divine text-black rounded-md hover:bg-liberation-sovereignty-gold transition-colors inline-flex items-center gap-1.5 text-sm font-semibold"
+                          >
+                            <Save className="w-4 h-4" /> Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Triage mode
+                      <div className="flex items-start gap-4">
+                        {/* Approve / Reject checkboxes */}
+                        <div className="flex flex-col gap-2 pt-0.5 shrink-0">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm text-green-400 select-none">
+                            <input
+                              type="checkbox"
+                              checked={mark === 'approve'}
+                              onChange={() => toggleMark(item.id, 'approve')}
+                              className="w-4 h-4 accent-green-500"
+                            />
+                            Approve
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm text-red-400 select-none">
+                            <input
+                              type="checkbox"
+                              checked={mark === 'reject'}
+                              onChange={() => toggleMark(item.id, 'reject')}
+                              className="w-4 h-4 accent-red-500"
+                            />
+                            Reject
+                          </label>
+                        </div>
+
+                        {/* Article */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-gray-800 text-gray-300 capitalize">
+                              {item.category}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(item.ingested_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-bold text-white leading-snug">{item.title}</h3>
+                          {item.excerpt && (
+                            <p className="text-sm text-gray-400 mt-1 line-clamp-2">{item.excerpt}</p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2">
+                            {item.url && (
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-liberation-gold-divine hover:underline"
+                              >
+                                View source <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline"
+                            >
+                              <Edit2 className="w-3 h-3" /> Edit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pager */}
+            <div className="flex items-center justify-center gap-4 mt-6 text-sm text-gray-400">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={pageClamped === 0}
+                className="p-1.5 rounded-md bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span>
+                Page {pageClamped + 1} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={pageClamped >= totalPages - 1}
+                className="p-1.5 rounded-md bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Sticky Apply bar */}
+      {!loading && articles.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <span className="text-sm text-gray-400">
+              {markedCount} marked ({Object.values(marks).filter((m) => m === 'approve').length} approve ·{' '}
+              {Object.values(marks).filter((m) => m === 'reject').length} reject)
+            </span>
+            <button
+              onClick={applyMarked}
+              disabled={markedCount === 0 || applying}
+              className="px-6 py-2.5 bg-liberation-gold-divine text-black font-semibold rounded-md hover:bg-liberation-sovereignty-gold disabled:opacity-30 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
+            >
+              {applying && <Loader2 className="w-4 h-4 animate-spin" />}
+              {applying ? 'Applying…' : `Apply ${markedCount > 0 ? `(${markedCount})` : ''}`}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
