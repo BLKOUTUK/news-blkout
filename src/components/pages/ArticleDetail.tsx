@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Calendar, User, Share2, Bookmark, ThumbsUp, ExternalLink } from 'lucide-react';
 import type { NewsArticle } from '@/types/newsroom';
 import { formatDate } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 interface ArticleDetailProps {
   articleId: string;
@@ -16,6 +17,9 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ articleId, onBack }) => {
 
   useEffect(() => {
     loadArticle();
+    // Count the view. Fire-and-forget — silent on failure (offline, RLS, etc.).
+    // Atomic increment via SECURITY DEFINER RPC; anon can call this one function only.
+    supabase.rpc('increment_news_view', { p_article_id: articleId }).then(() => {}, () => {});
     const votedArticles = JSON.parse(localStorage.getItem('blkout_voted_articles') || '[]');
     setVoted(votedArticles.includes(articleId));
   }, [articleId]);
