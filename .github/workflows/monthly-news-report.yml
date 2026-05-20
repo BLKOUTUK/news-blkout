@@ -34,10 +34,10 @@ jobs:
         run: |
           git config user.name 'BLKOUT News Bot'
           git config user.email 'news-bot@blkoutuk.com'
-          if git diff --quiet -- public/insights; then
+          git add public/insights/index.html
+          if git diff --staged --quiet -- public/insights; then
             echo "No change — report identical to last run."
           else
-            git add public/insights/index.html
             git commit -m "report: monthly news analytics — $(date -u +%Y-%m-%d)"
             git push
           fi
