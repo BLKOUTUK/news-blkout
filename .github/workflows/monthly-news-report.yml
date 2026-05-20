@@ -1,0 +1,43 @@
+name: Monthly News Report
+
+# Runs at 06:00 UTC on the 1st of each month. Also runnable manually.
+# Generates news.blkoutuk.com/insights/ from the read-only aggregate over
+# news_articles — the function IVOR was wrongly carrying, as a standalone
+# report. Decoupled from the publish path, by design.
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate report
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          mkdir -p public/insights
+          node scripts/monthly-news-report.mjs public/insights/index.html
+
+      - name: Commit if changed
+        run: |
+          git config user.name 'BLKOUT News Bot'
+          git config user.email 'news-bot@blkoutuk.com'
+          if git diff --quiet -- public/insights; then
+            echo "No change — report identical to last run."
+          else
+            git add public/insights/index.html
+            git commit -m "report: monthly news analytics — $(date -u +%Y-%m-%d)"
+            git push
+          fi
