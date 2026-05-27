@@ -13,11 +13,10 @@ export interface AIvorDigest {
 }
 
 export const latestDigest: AIvorDigest = {
-  weekLabel: 'Week ending 3 May 2026',
-  videoUrl: 'https://youtube.com/shorts/v31vQb10bYI',
+  weekLabel: 'Week ending 24 May 2026',
+  videoUrl: 'https://youtube.com/shorts/oc-tB_vWUn8',
   format: 'short',
-  publishesAt: '2026-05-03T23:01:00Z', // 4 May 00:01 BST = 3 May 23:01 UTC
   summary:
-    'Three stories the community voted up — European Parliament backs an EU-wide ban on conversion therapy, Afrobeats and queerness in Nigeria, NYC Pride picks Bernie Wagenblast as Grand Marshal.',
+    'Three stories the community voted up — Reflections from the Global South on the Trump administration\'s impact on trans and intersex people, ICE crackdowns threatening HIV care access, further legal breakthrough in Saint Lucia for Caribbean LGBT rights.',
   youtubeChannelUrl: 'https://www.youtube.com/channel/UC7g_Es50958bYJauxym0n1A',
 };
