@@ -26,9 +26,11 @@ export default async function handler(req: Request, res: Response) {
   if (req.method === 'GET') {
     try {
       const { period = 'week', limit = '10' } = req.query;
+      const take = parseInt(limit as string, 10);
 
-      // Calculate date range based on period
-      let startDate: Date;
+      // Calculate date range based on period. 'all' means no floor at all —
+      // it is the caller's last-resort backfill and must not be capped.
+      let startDate: Date | null;
       const now = new Date();
 
       switch (period) {
@@ -44,12 +46,41 @@ export default async function handler(req: Request, res: Response) {
         case 'year':
           startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
           break;
+        case 'all':
+          startDate = null;
+          break;
         default:
           startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       }
 
-      // Try to filter by active voting period first
-      let periodFilter: string | null = null;
+      // Fresh builder per call — a Supabase query builder cannot be reused.
+      // Ordered by votes then recency, so a period in which nobody has voted
+      // still comes back in a sensible order rather than an arbitrary one.
+      const baseQuery = () =>
+        supabase
+          .from('news_articles')
+          .select(`
+            id,
+            title,
+            excerpt,
+            featured_image,
+            image_alt,
+            category,
+            author,
+            source_name,
+            source_url,
+            read_time,
+            published_at,
+            upvote_count,
+            total_votes,
+            interest_score
+          `)
+          .eq('published', true)
+          .eq('status', 'published')
+          .order('upvote_count', { ascending: false })
+          .order('published_at', { ascending: false })
+          .limit(take * 2);
+
       const { data: activePeriod } = await supabase
         .from('voting_periods')
         .select('id')
@@ -58,49 +89,49 @@ export default async function handler(req: Request, res: Response) {
         .limit(1)
         .maybeSingle();
 
+      // Prefer the active voting period. It opens empty every fortnight, so an
+      // empty result there must fall through to the date window rather than be
+      // returned as "no stories" — otherwise every period-start request is dead.
+      let articles: any[] | null = null;
+      let source = 'date-range';
+
       if (activePeriod) {
-        periodFilter = activePeriod.id;
+        const { data, error: periodError } = await baseQuery().eq(
+          'voting_period_id',
+          activePeriod.id
+        );
+
+        if (periodError) {
+          console.error('Error fetching articles for voting period:', periodError);
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch top stories',
+          });
+        }
+
+        if (data && data.length > 0) {
+          articles = data;
+          source = 'voting-period';
+        }
       }
 
-      // Fetch articles with their engagement metrics
-      let articlesQuery = supabase
-        .from('news_articles')
-        .select(`
-          id,
-          title,
-          excerpt,
-          featured_image,
-          image_alt,
-          category,
-          author,
-          source_name,
-          source_url,
-          read_time,
-          published_at,
-          upvote_count,
-          total_votes,
-          interest_score
-        `)
-        .eq('published', true)
-        .eq('status', 'published')
-        .order('upvote_count', { ascending: false })
-        .limit(parseInt(limit as string, 10) * 2);
+      if (!articles) {
+        let fallbackQuery = baseQuery();
+        if (startDate) {
+          fallbackQuery = fallbackQuery.gte('published_at', startDate.toISOString());
+        }
 
-      // Filter by active period if available, otherwise fall back to date range
-      if (periodFilter) {
-        articlesQuery = articlesQuery.eq('voting_period_id', periodFilter);
-      } else {
-        articlesQuery = articlesQuery.gte('published_at', startDate.toISOString());
-      }
+        const { data, error: fallbackError } = await fallbackQuery;
 
-      const { data: articles, error } = await articlesQuery;
+        if (fallbackError) {
+          console.error('Error fetching articles:', fallbackError);
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch top stories',
+          });
+        }
 
-      if (error) {
-        console.error('Error fetching articles:', error);
-        return res.status(500).json({
-          success: false,
-          error: 'Failed to fetch top stories',
-        });
+        articles = data;
       }
 
       if (!articles || articles.length === 0) {
@@ -108,6 +139,7 @@ export default async function handler(req: Request, res: Response) {
           success: true,
           data: {
             period,
+            source: 'none',
             topStories: [],
             storyOfThePeriod: null,
           },
@@ -147,7 +179,7 @@ export default async function handler(req: Request, res: Response) {
       articlesWithScores.sort((a, b) => b.engagementScore - a.engagementScore);
 
       // Get top articles based on limit
-      const topStories = articlesWithScores.slice(0, parseInt(limit as string, 10));
+      const topStories = articlesWithScores.slice(0, take);
 
       // Story of the period is the top-ranked article
       const storyOfThePeriod = topStories[0] || null;
@@ -156,6 +188,7 @@ export default async function handler(req: Request, res: Response) {
         success: true,
         data: {
           period,
+          source,
           topStories,
           storyOfThePeriod,
           calculatedAt: new Date().toISOString(),
