@@ -8,7 +8,8 @@ const supabase = createClient(
 
 /**
  * POST /api/rotate-period
- * Locks the current period, picks top 3 winners, archives non-winners, creates next period.
+ * Locks the current period, picks top 3 winners, archives non-winners, creates the next
+ * period, and adopts any period-less articles into it so the new period is never born empty.
  * Protected by CRON_SECRET.
  */
 export default async function handler(req: Request, res: Response) {
@@ -125,6 +126,33 @@ export default async function handler(req: Request, res: Response) {
       return res.status(500).json({ success: false, error: 'Failed to create next period' });
     }
 
+    // 7. Adopt any period-less articles into the new period.
+    //
+    // Backstop. Ingest stamps `voting_period_id` at insert (see fetch-news.ts),
+    // but if that ever fails — or ingest runs while no period is active — the
+    // article is stranded: invisible to /api/news, and /api/vote rejects it
+    // because its period isn't active. A period that opens empty stays empty,
+    // which is exactly how periods 10 and 12 ended up with zero articles and
+    // voting became impossible across the whole site.
+    //
+    // Scoped to articles created since the previous period ended, so a rotation
+    // never drags years of backlog into a fresh fortnight.
+    const { data: adopted, error: adoptError } = await supabase
+      .from('news_articles')
+      .update({ voting_period_id: newPeriod.id })
+      .is('voting_period_id', null)
+      .gte('created_at', activePeriod.end_date)
+      .select('id');
+
+    if (adoptError) {
+      // Non-fatal: the new period exists and ingest will fill it from here.
+      console.error('Error adopting period-less articles:', adoptError);
+    }
+    const adoptedCount = adopted?.length ?? 0;
+    if (adoptedCount > 0) {
+      console.log(`[Rotate] Adopted ${adoptedCount} period-less article(s) into period ${nextNumber}`);
+    }
+
     return res.status(200).json({
       success: true,
       data: {
@@ -144,6 +172,7 @@ export default async function handler(req: Request, res: Response) {
           periodNumber: newPeriod.period_number,
           startDate: newPeriod.start_date,
           endDate: newPeriod.end_date,
+          articlesAdopted: adoptedCount,
         },
       },
     });
