@@ -63,15 +63,41 @@ export default async function handler(req: Request, res: Response) {
       }
 
       if (action === 'approve') {
-        // Update news_articles to published status
+        // Articles ingested before the fetch-news period fix (or during a window
+        // with no active period) carry no voting_period_id. Publishing one of those
+        // would put it live but unvotable — /api/vote rejects articles whose period
+        // isn't active. So stamp the current period on approval if it's missing.
+        const { data: existing } = await supabase
+          .from('news_articles')
+          .select('voting_period_id')
+          .eq('id', itemId)
+          .maybeSingle();
+
+        const publishUpdate: Record<string, unknown> = {
+          status: 'published',
+          published: true,
+          published_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (!existing?.voting_period_id) {
+          const { data: activePeriod } = await supabase
+            .from('voting_periods')
+            .select('id')
+            .eq('status', 'active')
+            .order('period_number', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (activePeriod?.id) {
+            publishUpdate.voting_period_id = activePeriod.id;
+          } else {
+            console.warn(`[Moderate] Publishing ${itemId} with no active voting period — it will not be votable.`);
+          }
+        }
+
         const { error: updateError } = await supabase
           .from('news_articles')
-          .update({
-            status: 'published',
-            published: true,
-            published_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .update(publishUpdate)
           .eq('id', itemId);
 
         if (updateError) {

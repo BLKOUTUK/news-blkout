@@ -380,7 +380,36 @@ async function articleExists(urlHash: string): Promise<boolean> {
   return !!data;
 }
 
+/**
+ * The id of the currently active voting period, or null if there isn't one.
+ *
+ * Every ingested article must be stamped with this. Without it the article is
+ * invisible to /api/news (which filters on the active period) and unvotable via
+ * /api/vote (which rejects articles whose period isn't active) — so it can never
+ * be voted on, never win, and never reach the weekly digest.
+ *
+ * Cached for the life of the request: one lookup, not one per article.
+ */
+let activePeriodIdCache: string | null | undefined;
+async function getActivePeriodId(): Promise<string | null> {
+  if (activePeriodIdCache !== undefined) return activePeriodIdCache;
+  const { data, error } = await supabase
+    .from('voting_periods')
+    .select('id')
+    .eq('status', 'active')
+    .order('period_number', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) console.error('[Insert] Could not resolve active voting period:', error);
+  activePeriodIdCache = data?.id ?? null;
+  if (!activePeriodIdCache) {
+    console.warn('[Insert] No active voting period — articles will be ingested unassigned.');
+  }
+  return activePeriodIdCache;
+}
+
 async function insertArticle(article: FetchedArticle): Promise<boolean> {
+  const votingPeriodId = await getActivePeriodId();
   const { error } = await supabase
     .from('news_articles')
     .insert({
@@ -401,6 +430,7 @@ async function insertArticle(article: FetchedArticle): Promise<boolean> {
       published: false,
       moderation_status: 'pending',
       topics: article.tags,
+      voting_period_id: votingPeriodId,
     });
 
   if (error) {
