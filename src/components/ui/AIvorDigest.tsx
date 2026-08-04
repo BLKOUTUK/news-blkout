@@ -1,9 +1,46 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Play, Film, Calendar } from 'lucide-react';
-import { latestDigest } from '@/config/aivorDigest';
+import { latestDigest, type AIvorDigest as AIvorDigestConfig } from '@/config/aivorDigest';
+import { supabase } from '@/lib/supabase';
+
+// The weekly video workflow writes a row to `aivor_digests` after each upload.
+// That row is the source of truth; the committed config is only the fallback
+// for a cold table or a failed fetch, so the panel can never render empty.
+const useLatestDigest = (): AIvorDigestConfig => {
+  const [digest, setDigest] = useState<AIvorDigestConfig>(latestDigest);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('aivor_digests')
+        .select('week_label, video_url, summary, format')
+        .eq('privacy', 'public')
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled || error || !data?.video_url) return;
+      setDigest({
+        ...latestDigest,
+        weekLabel: data.week_label,
+        videoUrl: data.video_url,
+        summary: data.summary,
+        format: data.format === 'short' ? 'short' : 'standard',
+        publishesAt: undefined,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return digest;
+};
 
 const AIvorDigest: React.FC = () => {
-  const { weekLabel, videoUrl, summary, youtubeChannelUrl, thumbnailUrl, format, publishesAt } = latestDigest;
+  const { weekLabel, videoUrl, summary, youtubeChannelUrl, thumbnailUrl, format, publishesAt } =
+    useLatestDigest();
   const portrait = thumbnailUrl || '/images/aivor-news.jpg';
   const youtubeId = videoUrl.trim() ? extractYouTubeId(videoUrl) : null;
   const isLive = !publishesAt || Date.now() >= new Date(publishesAt).getTime();
