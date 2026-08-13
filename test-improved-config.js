@@ -60,7 +60,7 @@ const strategies = {
             includeArticleCategories: true,
             includeSourceTitle: true,
             includeSourceRanking: true,
-            apiKey: "a2109782-1945-45e8-a4f3-56c968a263ac"
+            apiKey: "SET_EVENT_REGISTRY_API_KEY_FROM_ENV"
         }
     },
 
@@ -106,7 +106,7 @@ const strategies = {
             includeArticleBody: false,
             includeSourceTitle: true,
             includeSourceRanking: true,
-            apiKey: "a2109782-1945-45e8-a4f3-56c968a263ac"
+            apiKey: "SET_EVENT_REGISTRY_API_KEY_FROM_ENV"
         }
     }
 };

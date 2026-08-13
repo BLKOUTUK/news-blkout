@@ -4,7 +4,7 @@
 
 import https from 'https';
 
-const API_KEY = "a2109782-1945-45e8-a4f3-56c968a263ac";
+const API_KEY = "SET_EVENT_REGISTRY_API_KEY_FROM_ENV";
 
 // Original query (fails - too many keywords)
 const originalQuery = {

@@ -6,7 +6,7 @@
 import https from 'https';
 import fs from 'fs';
 
-const API_KEY = "a2109782-1945-45e8-a4f3-56c968a263ac";
+const API_KEY = "SET_EVENT_REGISTRY_API_KEY_FROM_ENV";
 
 // Multiple Event Registry queries for different aspects
 const eventRegistryQueries = {

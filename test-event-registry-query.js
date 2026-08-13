@@ -35,7 +35,7 @@ const queryConfig = {
     },
     resultType: "uriWgtList",
     uriWgtListSortBy: "socialScore",
-    apiKey: "a2109782-1945-45e8-a4f3-56c968a263ac"
+    apiKey: "SET_EVENT_REGISTRY_API_KEY_FROM_ENV"
 };
 
 function testQuery() {
