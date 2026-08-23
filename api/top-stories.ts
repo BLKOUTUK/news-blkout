@@ -95,6 +95,7 @@ export default async function handler(req: Request, res: Response) {
       let articles: any[] | null = null;
       let source = 'date-range';
       let periodNumber: number | null = null;
+      let lastClosedPeriodId: string | null = null;
 
       if (activePeriod) {
         const { data, error: periodError } = await baseQuery().eq(
@@ -143,6 +144,23 @@ export default async function handler(req: Request, res: Response) {
             articles = closedData;
             source = 'voting-period-previous';
             periodNumber = lastClosed.period_number ?? null;
+          }
+          lastClosedPeriodId = lastClosed.id ?? null;
+        }
+      }
+
+      // An editorial pick is what a moderator makes when the vote did not
+      // separate the field. It is deliberate human curation and outranks a
+      // date window, which is not curation at all.
+      if (!articles) {
+        const pickPeriodId = lastClosedPeriodId ?? activePeriod?.id ?? null;
+        if (pickPeriodId) {
+          const { data: picks } = await baseQuery()
+            .eq('voting_period_id', pickPeriodId)
+            .eq('is_featured', true);
+          if (picks && picks.length > 0) {
+            articles = picks;
+            source = 'editorial-pick';
           }
         }
       }
@@ -213,6 +231,21 @@ export default async function handler(req: Request, res: Response) {
       // Get top articles based on limit
       const topStories = articlesWithScores.slice(0, take);
 
+      // Did the vote separate the field, or is this a tie / a blank?
+      // Uncontested means ranking by votes is meaningless — the order that
+      // comes back is recency wearing a rosette. Say so, out loud, rather
+      // than letting a consumer mistake it for a community verdict.
+      const voteCounts = topStories.map(
+        (s: any) => s.upvote_count ?? s.total_votes ?? 0
+      );
+      const topVotes = voteCounts[0] ?? 0;
+      const contested =
+        source !== 'date-range' &&
+        topVotes > 0 &&
+        new Set(voteCounts).size > 1;
+
+      const needsEditorialPick = !contested && source !== 'editorial-pick';
+
       // Story of the period is the top-ranked article
       const storyOfThePeriod = topStories[0] || null;
 
@@ -222,6 +255,9 @@ export default async function handler(req: Request, res: Response) {
           period,
           source,
           periodNumber,
+          contested,
+          needsEditorialPick,
+          topVotes,
           topStories,
           storyOfThePeriod,
           calculatedAt: new Date().toISOString(),

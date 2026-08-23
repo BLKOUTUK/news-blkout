@@ -114,6 +114,32 @@ export default async function handler(req: Request, res: Response) {
         });
       }
 
+      // Editorial pick — what a moderator sets when the vote did not separate
+      // the field. Deliberate human curation, and the digest prefers it over a
+      // date window (see api/top-stories.ts, source: 'editorial-pick').
+      if (action === 'feature' || action === 'unfeature') {
+        const { data, error } = await supabase
+          .from('news_articles')
+          .update({ is_featured: action === 'feature' })
+          .eq('id', articleId)
+          .select('id, title, is_featured, voting_period_id')
+          .single();
+
+        if (error) {
+          console.error(`Error on ${action}:`, error);
+          return res.status(500).json({ success: false, error: `Failed to ${action} article` });
+        }
+        if (!data) {
+          return res.status(404).json({ success: false, error: 'Article not found' });
+        }
+
+        return res.status(200).json({
+          success: true,
+          action,
+          article: data,
+        });
+      }
+
       if (action === 'reject') {
         // Update news_articles to archived status (keep in database for audit)
         const { error: updateError } = await supabase

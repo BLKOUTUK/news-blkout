@@ -1,0 +1,23 @@
+name: Editorial pick request
+
+# The fortnight closes 23:59 Saturday. This runs Sunday morning, before the
+# moderators' day, and asks via the agent bridge — which Bayard2 checks at
+# 08:00 UK. Silent on a contested vote; only speaks when the vote did not
+# separate the field.
+on:
+  schedule:
+    - cron: "0 6 * * 0"   # 06:00 UTC Sunday — ahead of Bayard2's 08:00 UK check
+  workflow_dispatch:
+
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Ask moderators for an editorial pick if the vote was uncontested
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/editorial-pick-request.mjs
