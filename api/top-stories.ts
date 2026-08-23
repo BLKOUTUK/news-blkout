@@ -83,7 +83,7 @@ export default async function handler(req: Request, res: Response) {
 
       const { data: activePeriod } = await supabase
         .from('voting_periods')
-        .select('id')
+        .select('id, period_number')
         .eq('status', 'active')
         .order('period_number', { ascending: false })
         .limit(1)
@@ -94,6 +94,8 @@ export default async function handler(req: Request, res: Response) {
       // returned as "no stories" — otherwise every period-start request is dead.
       let articles: any[] | null = null;
       let source = 'date-range';
+      let periodNumber: number | null = null;
+      let lastClosedPeriodId: string | null = null;
 
       if (activePeriod) {
         const { data, error: periodError } = await baseQuery().eq(
@@ -112,6 +114,54 @@ export default async function handler(req: Request, res: Response) {
         if (data && data.length > 0) {
           articles = data;
           source = 'voting-period';
+          periodNumber = activePeriod.period_number ?? null;
+        }
+      }
+
+      // A period opens EMPTY every fortnight, and the weekly digest cron fires
+      // at 02:00 Sunday — two hours after rotation. Dropping straight to a raw
+      // date window there means the digest reports on a fortnight whose votes
+      // it structurally cannot see, and silently ranks by recency instead.
+      // Try the most recently CLOSED period first: that is the one the digest
+      // is actually reporting on.
+      if (!articles) {
+        const { data: lastClosed } = await supabase
+          .from('voting_periods')
+          .select('id, period_number')
+          .neq('status', 'active')
+          .order('period_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lastClosed) {
+          const { data: closedData, error: closedError } = await baseQuery().eq(
+            'voting_period_id',
+            lastClosed.id
+          );
+          if (closedError) {
+            console.error('Error fetching articles for last closed period:', closedError);
+          } else if (closedData && closedData.length > 0) {
+            articles = closedData;
+            source = 'voting-period-previous';
+            periodNumber = lastClosed.period_number ?? null;
+          }
+          lastClosedPeriodId = lastClosed.id ?? null;
+        }
+      }
+
+      // An editorial pick is what a moderator makes when the vote did not
+      // separate the field. It is deliberate human curation and outranks a
+      // date window, which is not curation at all.
+      if (!articles) {
+        const pickPeriodId = lastClosedPeriodId ?? activePeriod?.id ?? null;
+        if (pickPeriodId) {
+          const { data: picks } = await baseQuery()
+            .eq('voting_period_id', pickPeriodId)
+            .eq('is_featured', true);
+          if (picks && picks.length > 0) {
+            articles = picks;
+            source = 'editorial-pick';
+          }
         }
       }
 
@@ -181,6 +231,21 @@ export default async function handler(req: Request, res: Response) {
       // Get top articles based on limit
       const topStories = articlesWithScores.slice(0, take);
 
+      // Did the vote separate the field, or is this a tie / a blank?
+      // Uncontested means ranking by votes is meaningless — the order that
+      // comes back is recency wearing a rosette. Say so, out loud, rather
+      // than letting a consumer mistake it for a community verdict.
+      const voteCounts = topStories.map(
+        (s: any) => s.upvote_count ?? s.total_votes ?? 0
+      );
+      const topVotes = voteCounts[0] ?? 0;
+      const contested =
+        source !== 'date-range' &&
+        topVotes > 0 &&
+        new Set(voteCounts).size > 1;
+
+      const needsEditorialPick = !contested && source !== 'editorial-pick';
+
       // Story of the period is the top-ranked article
       const storyOfThePeriod = topStories[0] || null;
 
@@ -189,6 +254,10 @@ export default async function handler(req: Request, res: Response) {
         data: {
           period,
           source,
+          periodNumber,
+          contested,
+          needsEditorialPick,
+          topVotes,
           topStories,
           storyOfThePeriod,
           calculatedAt: new Date().toISOString(),
