@@ -83,7 +83,7 @@ export default async function handler(req: Request, res: Response) {
 
       const { data: activePeriod } = await supabase
         .from('voting_periods')
-        .select('id')
+        .select('id, period_number')
         .eq('status', 'active')
         .order('period_number', { ascending: false })
         .limit(1)
@@ -94,6 +94,7 @@ export default async function handler(req: Request, res: Response) {
       // returned as "no stories" — otherwise every period-start request is dead.
       let articles: any[] | null = null;
       let source = 'date-range';
+      let periodNumber: number | null = null;
 
       if (activePeriod) {
         const { data, error: periodError } = await baseQuery().eq(
@@ -112,6 +113,37 @@ export default async function handler(req: Request, res: Response) {
         if (data && data.length > 0) {
           articles = data;
           source = 'voting-period';
+          periodNumber = activePeriod.period_number ?? null;
+        }
+      }
+
+      // A period opens EMPTY every fortnight, and the weekly digest cron fires
+      // at 02:00 Sunday — two hours after rotation. Dropping straight to a raw
+      // date window there means the digest reports on a fortnight whose votes
+      // it structurally cannot see, and silently ranks by recency instead.
+      // Try the most recently CLOSED period first: that is the one the digest
+      // is actually reporting on.
+      if (!articles) {
+        const { data: lastClosed } = await supabase
+          .from('voting_periods')
+          .select('id, period_number')
+          .neq('status', 'active')
+          .order('period_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lastClosed) {
+          const { data: closedData, error: closedError } = await baseQuery().eq(
+            'voting_period_id',
+            lastClosed.id
+          );
+          if (closedError) {
+            console.error('Error fetching articles for last closed period:', closedError);
+          } else if (closedData && closedData.length > 0) {
+            articles = closedData;
+            source = 'voting-period-previous';
+            periodNumber = lastClosed.period_number ?? null;
+          }
         }
       }
 
@@ -189,6 +221,7 @@ export default async function handler(req: Request, res: Response) {
         data: {
           period,
           source,
+          periodNumber,
           topStories,
           storyOfThePeriod,
           calculatedAt: new Date().toISOString(),
