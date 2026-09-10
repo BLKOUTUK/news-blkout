@@ -4,11 +4,10 @@ import NewsroomHome from './components/pages/NewsroomHome';
 import ArticleDetail from './components/pages/ArticleDetail';
 import WinnersPage from './components/pages/WinnersPage';
 import SubmitArticleForm from './components/ui/SubmitArticleForm';
-import ModerationDashboard from './components/pages/ModerationDashboard';
 import Footer from './components/ui/Footer';
 import { InstallPrompt, OfflineIndicator } from './components/pwa';
 
-type Page = 'home' | 'article' | 'submit' | 'admin' | 'winners';
+type Page = 'home' | 'article' | 'submit' | 'winners';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -18,9 +17,7 @@ function App() {
   useEffect(() => {
     const path = window.location.pathname;
 
-    if (path === '/admin') {
-      setCurrentPage('admin');
-    } else if (path === '/submit') {
+    if (path === '/submit') {
       setCurrentPage('submit');
     } else if (path === '/winners') {
       setCurrentPage('winners');
@@ -40,9 +37,7 @@ function App() {
     const handlePopState = () => {
       const path = window.location.pathname;
 
-      if (path === '/admin') {
-        setCurrentPage('admin');
-      } else if (path === '/submit') {
+      if (path === '/submit') {
         setCurrentPage('submit');
       } else if (path === '/winners') {
         setCurrentPage('winners');
@@ -82,11 +77,6 @@ function App() {
   const navigateToWinners = () => {
     setCurrentPage('winners');
     window.history.pushState({}, '', '/winners');
-  };
-
-  const navigateToAdmin = () => {
-    setCurrentPage('admin');
-    window.history.pushState({}, '', '/admin');
   };
 
   return (
@@ -182,9 +172,6 @@ function App() {
         )}
         {currentPage === 'winners' && (
           <WinnersPage />
-        )}
-        {currentPage === 'admin' && (
-          <ModerationDashboard />
         )}
       </main>
 

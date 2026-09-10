@@ -93,6 +93,10 @@ async function startServer() {
     }
   });
 
+  // Retired 10 Sep 2026: the in-app moderation page had no sign-in and its writes
+  // now 401 against ivor-core. Moderation lives on comms.blkoutuk.com behind login.
+  app.get(['/admin', '/admin/*splat'], (_req, res) => res.redirect(301, 'https://comms.blkoutuk.com/admin/news'));
+
   // SPA fallback: serve index.html for any request that doesn't match an API route or a static file
   // Note: Using app.use() instead of app.get('*') for Express 5.x compatibility
   app.use((req, res) => {
