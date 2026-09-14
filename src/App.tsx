@@ -130,7 +130,7 @@ function App() {
                 AIvor
               </a>
               <a
-                href="https://voices.blkoutuk.cloud"
+                href="https://voices.blkoutuk.com"
                 className="px-4 py-2 text-base font-signature font-black uppercase tracking-tight transition-colors duration-200 border-b-2 border-transparent text-gray-200 hover:text-liberation-pan-african-green hover:border-liberation-pan-african-green/60"
               >
                 Voices

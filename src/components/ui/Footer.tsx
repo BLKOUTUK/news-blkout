@@ -58,7 +58,7 @@ const Footer: React.FC = () => {
                 </button>
               </li>
               <li>
-                <a href="https://blog.blkoutuk.cloud" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-liberation-gold-divine transition-colors flex items-center gap-1">
+                <a href="https://voices.blkoutuk.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-liberation-gold-divine transition-colors flex items-center gap-1">
                   BLKOUT Voices
                   <ExternalLink className="h-3 w-3" />
                 </a>
