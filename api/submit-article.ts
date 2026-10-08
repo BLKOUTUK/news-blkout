@@ -108,8 +108,9 @@ export default async function handler(req: Request, res: Response) {
 
       // Submit to news_articles with liberation-aware status
       // Auto-publish liberation-compliant content, otherwise send to review
-      const articleStatus = liberationCheck.recommendation === 'publish' ? 'published' : 'review';
-      const isAutoPublished = liberationCheck.recommendation === 'publish';
+      // Every community submission goes to moderation; the liberation check informs, never publishes
+      const articleStatus = 'review';
+      const isAutoPublished = false;
 
       const { data, error } = await supabase
         .from('news_articles')
