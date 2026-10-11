@@ -228,8 +228,14 @@ async function startServer() {
 
   // SPA fallback: serve index.html for any request that doesn't match an API route or a static file
   // Note: Using app.use() instead of app.get('*') for Express 5.x compatibility
+  // Paths the SPA renders (src/App.tsx: home, /submit, /winners, /article/<id>). Anything else still
+  // gets the shell, with a real 404 so search engines don't index made-up addresses (SEO plan K2,
+  // 11 Oct 2026). /article/<id> only reaches here when its render failed, so it keeps the 200.
   app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    const route = req.path.replace(/^\/+|\/+$/g, '');
+    const known = route === '' || route === 'submit' || route === 'winners' || route.startsWith('article/');
+    if (!known && path.extname(route)) return res.status(404).send('Not found');
+    res.status(known ? 200 : 404).sendFile(path.join(__dirname, 'dist', 'index.html'));
   });
 
   // Start server AFTER all routes are registered
