@@ -142,8 +142,20 @@ export default async function handler(req: Request, res: Response) {
           if (closedError) {
             console.error('Error fetching articles for last closed period:', closedError);
           } else if (closedData && closedData.length > 0) {
-            articles = closedData;
-            source = 'voting-period-previous';
+            // An editor's pick outranks the leftover ordering when the vote
+            // didn't separate the field — otherwise a pick never reaches the digest.
+            const closedVotes = closedData.map((a: any) => a.upvote_count || 0);
+            const closedContested = closedVotes[0] > 0 && new Set(closedVotes).size > 1;
+            const { data: picks } = closedContested
+              ? { data: null }
+              : await baseQuery().eq('voting_period_id', lastClosed.id).eq('is_featured', true);
+            if (picks && picks.length > 0) {
+              articles = picks;
+              source = 'editorial-pick';
+            } else {
+              articles = closedData;
+              source = 'voting-period-previous';
+            }
             periodNumber = lastClosed.period_number ?? null;
           }
           lastClosedPeriodId = lastClosed.id ?? null;
