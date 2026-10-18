@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, PenLine, ExternalLink } from 'lucide-react';
+import { formatDateRange } from '@/lib/utils';
 
 interface RoundWinner {
   id: string;
@@ -11,6 +12,7 @@ interface RoundWinner {
 
 interface ClosedRound {
   periodNumber: number;
+  startDate: string;
   endDate: string;
   pickedBy: 'votes' | 'editor' | 'ranking';
   winners: RoundWinner[];
@@ -43,17 +45,17 @@ const RoundResults: React.FC = () => {
 
   if (!round) return null;
 
+  const dates = formatDateRange(round.startDate, round.endDate);
   const heading = {
-    votes: `Round ${round.periodNumber} results`,
-    editor: `Round ${round.periodNumber}: editor's picks`,
-    ranking: `Round ${round.periodNumber} closed without a vote`,
+    votes: `Results: ${dates}`,
+    editor: `Editor's picks: ${dates}`,
+    ranking: `${dates}: closed without a vote`,
   }[round.pickedBy];
 
   const subhead = {
     votes: 'You called it. The stories the community put on top:',
     editor: 'No clear winner from the vote, so an editor chose these:',
-    ranking: 'Nobody called it this time. These led the round. Round ' +
-      (round.periodNumber + 1) + ' is yours to decide.',
+    ranking: 'Nobody called it this time. These led the fortnight. This one is yours to decide.',
   }[round.pickedBy];
 
   const Icon = round.pickedBy === 'editor' ? PenLine : Trophy;

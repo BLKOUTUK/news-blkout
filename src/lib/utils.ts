@@ -139,3 +139,11 @@ export const a11yUtils = {
     setTimeout(() => document.body.removeChild(announcer), 1000);
   },
 };
+
+/** A voting fortnight as people read it: "4–17 Oct", or "27 Sep – 10 Oct" across months. */
+export function formatDateRange(start: string, end: string): string {
+  const s = new Date(start), e = new Date(end);
+  const day = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', timeZone: 'UTC' });
+  const dayMonth = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return s.getUTCMonth() === e.getUTCMonth() ? `${day(s)}–${dayMonth(e)}` : `${dayMonth(s)} – ${dayMonth(e)}`;
+}
