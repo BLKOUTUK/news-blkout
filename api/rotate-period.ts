@@ -52,7 +52,7 @@ export default async function handler(req: Request, res: Response) {
     // 2. Get all published articles in this period, ranked by total_votes desc
     const { data: articles, error: articlesError } = await supabase
       .from('news_articles')
-      .select('id, title, total_votes, upvote_count, interest_score')
+      .select('id, title, total_votes, upvote_count, interest_score, is_featured')
       .eq('voting_period_id', activePeriod.id)
       .eq('status', 'published')
       .order('total_votes', { ascending: false })
@@ -63,7 +63,14 @@ export default async function handler(req: Request, res: Response) {
       return res.status(500).json({ success: false, error: 'Failed to fetch articles' });
     }
 
-    const allArticles = articles || [];
+    // When the vote didn't separate the field, the editor's picks (Saturday's
+    // Telegram list) win the round instead of the interest_score ordering.
+    const fetched = articles || [];
+    const votes = fetched.map((a) => a.upvote_count || 0);
+    const contested = Math.max(0, ...votes) > 0 && new Set(votes).size > 1;
+    const allArticles = contested
+      ? fetched
+      : [...fetched.filter((a) => a.is_featured), ...fetched.filter((a) => !a.is_featured)];
     const top3 = allArticles.slice(0, 3);
     const rest = allArticles.slice(3);
 
