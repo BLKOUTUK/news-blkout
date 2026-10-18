@@ -18,6 +18,7 @@ interface StoryData {
   share_count: number;
   comment_count: number;
   engagement_score: number;
+  votingOpen?: boolean;
 }
 
 const VoteButton: React.FC<{ storyId: string; initialCount: number }> = ({ storyId, initialCount }) => {
@@ -316,9 +317,11 @@ const StoryOfTheWeek: React.FC<StoryOfTheWeekProps> = ({
                   </div>
 
                   {/* Vote button */}
-                  <div className="flex-shrink-0" data-no-propagate>
-                    <VoteButton storyId={story.id} initialCount={story.upvote_count} />
-                  </div>
+                  {story.votingOpen !== false && (
+                    <div className="flex-shrink-0" data-no-propagate>
+                      <VoteButton storyId={story.id} initialCount={story.upvote_count} />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

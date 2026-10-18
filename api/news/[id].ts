@@ -36,9 +36,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      // Same rule vote.ts enforces: no vote button on a closed period's article.
+      let votingOpen = true;
+      if (data.voting_period_id) {
+        const { data: period } = await supabase
+          .from('voting_periods')
+          .select('status')
+          .eq('id', data.voting_period_id)
+          .maybeSingle();
+        votingOpen = !period || period.status === 'active';
+      }
+
       return res.status(200).json({
         success: true,
-        data,
+        data: { ...data, votingOpen },
       });
     } catch (error) {
       console.error('API error:', error);
