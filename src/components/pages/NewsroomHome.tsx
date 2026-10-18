@@ -9,6 +9,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import type { NewsArticle, ArticleCategory } from '@/types/newsroom';
+import { formatDateRange } from '@/lib/utils';
 import ArticleCard from '../ui/ArticleCard';
 import CategoryFilter from '../ui/CategoryFilter';
 import SortFilter from '../ui/SortFilter';
@@ -27,6 +28,7 @@ type SortOption = 'interest' | 'recent' | 'weekly';
 
 interface VotingPeriodInfo {
   periodNumber: number;
+  startDate: string;
   endDate: string;
   daysRemaining: number;
   totalArticles: number;
@@ -93,8 +95,8 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
 
   const regularArticles = articles;
 
-  // Between rounds the feed falls back to the closed round's stories, so the
-  // page has to say which round is which rather than switch over silently.
+  // Between fortnights the feed falls back to the closed fortnight's stories, so the
+  // page says which is which by date — readers don't track round numbers (Rob, 18 Oct 2026).
   const openStoryCount = articles.filter((a) => a.votingOpen !== false).length;
   const closesOn = votingPeriod
     ? new Date(votingPeriod.endDate).toLocaleDateString('en-GB', {
@@ -104,12 +106,19 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
   const roundStatus = !votingPeriod
     ? null
     : openStoryCount === 0
-      ? `Round ${votingPeriod.periodNumber} is open · first stories landing soon`
+      ? `Voting is open until ${closesOn} · first stories landing soon`
       : votingPeriod.daysRemaining <= 1
-        ? `Last call: Round ${votingPeriod.periodNumber} closes tonight at midnight`
+        ? `Last call: vote before midnight tonight`
         : votingPeriod.daysRemaining === 2
-          ? `Last call: Round ${votingPeriod.periodNumber} closes tomorrow at midnight`
-          : `Round ${votingPeriod.periodNumber} · voting closes ${closesOn}`;
+          ? `Last call: vote before midnight tomorrow`
+          : `Vote before ${closesOn}`;
+  // Fortnights run back to back, so the closed one ends the day before this one starts.
+  const previousFortnight = votingPeriod
+    ? formatDateRange(
+        new Date(new Date(votingPeriod.startDate).getTime() - 14 * 86_400_000).toISOString(),
+        new Date(new Date(votingPeriod.startDate).getTime() - 86_400_000).toISOString(),
+      )
+    : '';
   const lastCall = !!votingPeriod && openStoryCount > 0 && votingPeriod.daysRemaining <= 2;
 
   if (loading) {
@@ -230,7 +239,7 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
                       {openStoryCount > 0
                         ? 'All Stories — Vote Now'
                         : votingPeriod
-                          ? `Round ${votingPeriod.periodNumber - 1} stories — voting closed`
+                          ? `Stories from ${previousFortnight} — voting closed`
                           : 'All Stories'}
                     </h2>
                     {openStoryCount > 0 && (
