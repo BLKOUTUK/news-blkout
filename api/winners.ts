@@ -67,8 +67,29 @@ export default async function handler(req: Request, res: Response) {
           }
         }
 
+        // Say who actually chose these. rotate-period ranks by votes then
+        // interest_score, so with no votes the "winners" are the ingest
+        // algorithm's ranking — not a community verdict and not an editor's.
+        const voteCounts = winners.map((w) => w.upvote_count || 0);
+        const contested = (voteCounts[0] || 0) > 0 && new Set(voteCounts).size > 1;
+        let pickedBy: 'votes' | 'editor' | 'ranking' = contested ? 'votes' : 'ranking';
+        if (!contested) {
+          const { data: featured } = await supabase
+            .from('news_articles')
+            .select('id, title, excerpt, featured_image, image_alt, category, author, source_name, source_url, read_time, published_at, upvote_count, total_votes, interest_score, weekly_rank, is_story_of_week')
+            .eq('voting_period_id', period.id)
+            .eq('is_featured', true)
+            .order('published_at', { ascending: false })
+            .limit(3);
+          if (featured && featured.length > 0) {
+            winners = featured;
+            pickedBy = 'editor';
+          }
+        }
+
         return {
           id: period.id,
+          pickedBy,
           periodNumber: period.period_number,
           startDate: period.start_date,
           endDate: period.end_date,

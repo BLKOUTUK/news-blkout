@@ -14,6 +14,7 @@ import CategoryFilter from '../ui/CategoryFilter';
 import SortFilter from '../ui/SortFilter';
 import NewsletterSignup from '../ui/NewsletterSignup';
 import StoryOfTheWeek from '../ui/StoryOfTheWeek';
+import RoundResults from '../ui/RoundResults';
 import VotingOnboardingModal from '../ui/VotingOnboardingModal';
 import FoundationLayer from '../foundation/FoundationLayer';
 import AIvorDigest from '../ui/AIvorDigest';
@@ -92,6 +93,25 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
 
   const regularArticles = articles;
 
+  // Between rounds the feed falls back to the closed round's stories, so the
+  // page has to say which round is which rather than switch over silently.
+  const openStoryCount = articles.filter((a) => a.votingOpen !== false).length;
+  const closesOn = votingPeriod
+    ? new Date(votingPeriod.endDate).toLocaleDateString('en-GB', {
+        weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
+      })
+    : '';
+  const roundStatus = !votingPeriod
+    ? null
+    : openStoryCount === 0
+      ? `Round ${votingPeriod.periodNumber} is open · first stories landing soon`
+      : votingPeriod.daysRemaining <= 1
+        ? `Last call: Round ${votingPeriod.periodNumber} closes tonight at midnight`
+        : votingPeriod.daysRemaining === 2
+          ? `Last call: Round ${votingPeriod.periodNumber} closes tomorrow at midnight`
+          : `Round ${votingPeriod.periodNumber} · voting closes ${closesOn}`;
+  const lastCall = !!votingPeriod && openStoryCount > 0 && votingPeriod.daysRemaining <= 2;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
@@ -139,19 +159,24 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
             </p>
 
             {/* Period countdown — integrated into hero */}
-            {votingPeriod && (
-              <div className="inline-flex items-center gap-3 bg-black/60 backdrop-blur-sm border border-liberation-sovereignty-gold/30 rounded-full px-5 py-2.5">
-                <Clock className="h-4 w-4 text-liberation-sovereignty-gold" />
-                <span className="text-sm text-white">
-                  <span className="text-liberation-sovereignty-gold font-bold text-base">
-                    {votingPeriod.daysRemaining}
-                  </span>
-                  {' '}{votingPeriod.daysRemaining === 1 ? 'day' : 'days'} left to vote
-                </span>
-                <span className="w-px h-4 bg-white/20"></span>
-                <span className="text-xs text-gray-400">
-                  {votingPeriod.totalVotes} votes cast
-                </span>
+            {votingPeriod && roundStatus && (
+              <div
+                className={`inline-flex items-center gap-3 backdrop-blur-sm rounded-full px-5 py-2.5 ${
+                  lastCall
+                    ? 'bg-liberation-sovereignty-gold text-black'
+                    : 'bg-black/60 border border-liberation-sovereignty-gold/30 text-white'
+                }`}
+              >
+                <Clock className={`h-4 w-4 ${lastCall ? '' : 'text-liberation-sovereignty-gold'}`} />
+                <span className={`text-sm ${lastCall ? 'font-bold' : ''}`}>{roundStatus}</span>
+                {votingPeriod.totalVotes > 0 && (
+                  <>
+                    <span className={`w-px h-4 ${lastCall ? 'bg-black/30' : 'bg-white/20'}`}></span>
+                    <span className={`text-xs ${lastCall ? '' : 'text-gray-400'}`}>
+                      {votingPeriod.totalVotes} {votingPeriod.totalVotes === 1 ? 'vote' : 'votes'} cast
+                    </span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -191,20 +216,29 @@ const NewsroomHome: React.FC<NewsroomHomeProps> = ({ onArticleClick }) => {
               {/* AIvor weekly digest — video / pre-state */}
               <AIvorDigest />
 
-              {/* Current leaderboard */}
-              <StoryOfTheWeek period="week" limit={10} />
+              {/* Last round's outcome, for a week after it closes */}
+              <RoundResults />
+
+              {/* Current leaderboard — only while there's a live round to lead */}
+              {openStoryCount > 0 && <StoryOfTheWeek period="week" limit={10} />}
 
               {/* Votable article grid */}
               {regularArticles.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-5 border-l-4 border-news pl-4">
                     <h2 className="text-lg font-bold text-white uppercase tracking-wide">
-                      All Stories — Vote Now
+                      {openStoryCount > 0
+                        ? 'All Stories — Vote Now'
+                        : votingPeriod
+                          ? `Round ${votingPeriod.periodNumber - 1} stories — voting closed`
+                          : 'All Stories'}
                     </h2>
-                    <div className="flex items-center gap-1 text-xs text-news">
-                      <Zap className="h-3.5 w-3.5" />
-                      <span className="font-medium">No login needed</span>
-                    </div>
+                    {openStoryCount > 0 && (
+                      <div className="flex items-center gap-1 text-xs text-news">
+                        <Zap className="h-3.5 w-3.5" />
+                        <span className="font-medium">No login needed</span>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {regularArticles.map((article) => (
