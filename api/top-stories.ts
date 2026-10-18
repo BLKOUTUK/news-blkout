@@ -73,7 +73,8 @@ export default async function handler(req: Request, res: Response) {
             published_at,
             upvote_count,
             total_votes,
-            interest_score
+            interest_score,
+            voting_period_id
           `)
           .eq('published', true)
           .eq('status', 'published')
@@ -218,6 +219,8 @@ export default async function handler(req: Request, res: Response) {
 
           return {
             ...article,
+            // Same rule vote.ts enforces — closed-period stories take no votes.
+            votingOpen: !article.voting_period_id || article.voting_period_id === activePeriod?.id,
             shareCount: shareCount || 0,
             commentCount,
             engagementScore,

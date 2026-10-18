@@ -221,6 +221,7 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ articleId, onBack }) => {
         {/* Engagement Actions */}
         <div className="flex items-center justify-between py-6 border-t border-b border-white/10 mb-8">
           <div className="flex items-center gap-4">
+            {article.votingOpen !== false && (
             <button
               onClick={handleVote}
               disabled={voted}
@@ -233,6 +234,7 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ articleId, onBack }) => {
               <ThumbsUp className="h-5 w-5" />
               <span>{voted ? 'Voted' : 'Vote'}</span>
             </button>
+            )}
             <button
               onClick={handleBookmark}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${

@@ -121,9 +121,20 @@ export default async function handler(req: Request, res: Response) {
         });
       }
 
+      // Same rule vote.ts enforces: an article in a closed period can't take
+      // votes, so the page shouldn't offer a button that silently 403s.
+      const { data: openPeriod } = await supabase
+        .from('voting_periods')
+        .select('id')
+        .eq('status', 'active')
+        .order('period_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       // Transform snake_case to camelCase for frontend
       const transformedArticles = (data || []).map((article: any) => ({
         ...article,
+        votingOpen: !article.voting_period_id || article.voting_period_id === openPeriod?.id,
         publishedAt: article.published_at,
         createdAt: article.created_at,
         updatedAt: article.updated_at,

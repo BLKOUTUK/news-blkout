@@ -30,6 +30,7 @@ export interface NewsArticle {
   curatorId?: string | null;
 
   // Engagement
+  votingOpen?: boolean; // false when the article's voting period has closed
   interestScore: number;
   totalVotes: number;
   viewCount?: number;

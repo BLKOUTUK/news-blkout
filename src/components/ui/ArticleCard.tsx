@@ -11,7 +11,7 @@ interface ArticleCardProps {
   votingEnabled?: boolean;
 }
 
-const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick, votingEnabled = true }) => {
+const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick, votingEnabled = article.votingOpen !== false }) => {
   const [upvoteCount, setUpvoteCount] = useState(article.totalVotes || 0);
   const [hasUpvoted, setHasUpvoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
