@@ -91,9 +91,10 @@ export default async function handler(req: Request, res: Response) {
       <p class="sub">Choose up to ${MAX_PICKS}. Voting closes at midnight tonight; if the vote separates the field, it wins.
         Otherwise your picks lead the round's results and Sunday's video. Tap again to unpick.</p>
       <p class="msg" id="msg">${picked} of ${MAX_PICKS} picked</p>
-      <ol>${rows || '<li>No published stories in this round.</li>'}</ol>
+      <ol id="picks" data-period="${esc(params.period)}" data-exp="${esc(params.exp)}" data-sig="${esc(params.sig)}">${rows || '<li>No published stories in this round.</li>'}</ol>
       <script>
-        const link = ${JSON.stringify({ period: params.period, exp: params.exp, sig: params.sig })};
+        const { period, exp, sig } = document.getElementById('picks').dataset;
+        const link = { period, exp, sig };
         document.querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', async () => {
           b.disabled = true;
           const r = await fetch('/api/editor-pick', { method: 'POST', headers: { 'Content-Type': 'application/json' },
