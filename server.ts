@@ -47,12 +47,17 @@ const cleanContent = (v: unknown) => String(v ?? '')
   .replace(/\son\w+="[^"]*"/gi, '')
   .replace(/javascript:/gi, '')
   .trim();
+// Most feed items carry only the RSS teaser (median ~300 characters), which Google reports as soft 404s.
+// Those pages stay readable but ask not to be indexed, and stay out of the sitemap.
+const THIN_CHARS = 600;
+const isThin = (a: { content?: unknown; excerpt?: unknown }) =>
+  Math.max(stripTags(cleanContent(a.content)).length, stripTags(cleanContent(a.excerpt)).length) < THIN_CHARS;
 const jsonLd = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
 let shellCache = '';
 const shell = () => shellCache || (shellCache = fs.readFileSync(path.join(__dirname, 'dist', 'index.html'), 'utf8'));
-function withHead(html: string, h: { title: string; description: string; canonical: string; jsonld?: string; image?: string }) {
+function withHead(html: string, h: { title: string; description: string; canonical: string; jsonld?: string; image?: string; noindex?: boolean }) {
   return html
-    .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(h.title)}</title>\n    <link rel="canonical" href="${esc(h.canonical)}" />${h.jsonld ? `\n    <script type="application/ld+json">${h.jsonld}</script>` : ''}`)
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(h.title)}</title>\n    <link rel="canonical" href="${esc(h.canonical)}" />${h.noindex ? '\n    <meta name="robots" content="noindex, follow" />' : ''}${h.jsonld ? `\n    <script type="application/ld+json">${h.jsonld}</script>` : ''}`)
     .replace(/<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${esc(h.description)}" />`)
     .replace(/<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${esc(h.title)}" />`)
     .replace(/<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${esc(h.description)}" />`)
@@ -107,7 +112,7 @@ app.get('/article/:id', async (req, res, next) => {
       if (gone?.source_url && /^https?:\/\//i.test(gone.source_url)) return res.redirect(302, gone.source_url);
       res.status(404); return res.send(shell());
     }
-    const description = stripTags(a.excerpt || a.content).slice(0, 300);
+    const description = stripTags(cleanContent(a.excerpt || a.content)).slice(0, 300);
     const image = a.hero_image || a.featured_image || `${SITE}/pwa-512x512.png`;
     const jsonld = jsonLd({
       '@context': 'https://schema.org', '@type': 'NewsArticle',
@@ -119,10 +124,12 @@ app.get('/article/:id', async (req, res, next) => {
       ...(a.source_url ? { isBasedOn: a.source_url } : {}),
       ...(Array.isArray(a.topics) && a.topics.length ? { keywords: a.topics.join(', ') } : {}),
     });
+    const excerpt = stripTags(cleanContent(a.excerpt));
+    const body = cleanContent(a.content);
     const meta = [a.source_name ? `From ${esc(a.source_name)}` : '', a.author ? esc(a.author) : '', a.published_at ? fmtDate(a.published_at) : ''].filter(Boolean).join(' · ');
-    const inner = `<article><h1>${esc(a.title)}</h1>${meta ? `<p>${meta}</p>` : ''}${a.excerpt ? `<p>${esc(stripTags(a.excerpt))}</p>` : ''}<div>${cleanContent(a.content)}</div>${a.source_url ? `<p><a href="${esc(a.source_url)}" rel="noopener">Read the full story at ${esc(a.source_name || 'the source')}</a></p>` : ''}<p><a href="/">More from BLKOUT News</a></p></article>`;
+    const inner = `<article><h1>${esc(a.title)}</h1>${meta ? `<p>${meta}</p>` : ''}${excerpt ? `<p>${esc(excerpt)}</p>` : ''}${body && stripTags(body) !== excerpt ? `<div>${body}</div>` : ''}${a.source_url ? `<p><a href="${esc(a.source_url)}" rel="noopener">Read the full story at ${esc(a.source_name || 'the source')}</a></p>` : ''}<p><a href="/">More from BLKOUT News</a></p></article>`;
     res.setHeader('Cache-Control', 'no-store');
-    res.send(withHead(withRoot(shell(), inner), { title: `${a.title} | BLKOUT News`, description, canonical: `${SITE}/article/${a.id}`, jsonld, image }));
+    res.send(withHead(withRoot(shell(), inner), { title: `${a.title} | BLKOUT News`, description, canonical: `${SITE}/article/${a.id}`, jsonld, image, noindex: isThin(a) }));
   } catch (e) { console.error('ARTICLE RENDER FAILED — serving bare shell:', e); next(); }
 });
 
@@ -143,10 +150,10 @@ app.get('/api/news/:id', async (req, res) => {
 
 app.get('/sitemap.xml', async (_req, res) => {
   try {
-    const { data, error } = await publicDb.from('news_articles').select('id, published_at, updated_at')
+    const { data, error } = await publicDb.from('news_articles').select('id, published_at, updated_at, excerpt, content')
       .eq('published', true).eq('status', 'published').order('published_at', { ascending: false }).limit(2000);
     if (error) throw error;
-    const urls = [`  <url><loc>${SITE}/</loc><changefreq>daily</changefreq></url>`].concat((data || []).map((a) => {
+    const urls = [`  <url><loc>${SITE}/</loc><changefreq>daily</changefreq></url>`].concat((data || []).filter((a) => !isThin(a)).map((a) => {
       const lm = (a.updated_at || a.published_at || '').slice(0, 10);
       return `  <url><loc>${SITE}/article/${a.id}</loc>${lm ? `<lastmod>${lm}</lastmod>` : ''}</url>`;
     }));
