@@ -83,6 +83,13 @@ app.get('/', async (_req, res, next) => {
   } catch (e) { console.error('HOME RENDER FAILED — serving bare shell:', e); next(); }
 });
 
+// Early weekly-digest reels linked news.blkoutuk.com/<id> without /article/.
+app.get('/:id', (req, res, next) => {
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return next();
+  const q = req.originalUrl.indexOf('?');
+  return res.redirect(301, `/article/${req.params.id}${q >= 0 ? req.originalUrl.slice(q) : ''}`);
+});
+
 app.get('/article/:id', async (req, res, next) => {
   const id = req.params.id;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return next();
@@ -90,7 +97,16 @@ app.get('/article/:id', async (req, res, next) => {
     const { data: a, error } = await publicDb.from('news_articles')
       .select('id, title, excerpt, content, author, source_name, source_url, featured_image, hero_image, published_at, updated_at, topics')
       .eq('id', id).eq('published', true).eq('status', 'published').single();
-    if (error || !a) { res.status(404); return res.send(shell()); }
+    if (error || !a) {
+      // Stories that lose the weekly vote are archived (rotate-period), but reels and digests
+      // already link them. Send those readers to the original publisher, which lasts. 302 so the
+      // link can come home if archived stories are ever shown here again. Never-published
+      // (rejected) items keep the 404.
+      const { data: gone } = await publicDb.from('news_articles')
+        .select('source_url').eq('id', id).eq('status', 'archived').not('published_at', 'is', null).maybeSingle();
+      if (gone?.source_url && /^https?:\/\//i.test(gone.source_url)) return res.redirect(302, gone.source_url);
+      res.status(404); return res.send(shell());
+    }
     const description = stripTags(a.excerpt || a.content).slice(0, 300);
     const image = a.hero_image || a.featured_image || `${SITE}/pwa-512x512.png`;
     const jsonld = jsonLd({
