@@ -192,9 +192,17 @@ function calculateRelevanceScore(title: string, content: string, sourceTags: str
   // OK: Black article from an LGBTQ source (e.g. PinkNews covering racism)
   if (hasLgbtqTag && hasBlackContent) return 75;
 
+  // UK, broader (Rob, 1 Nov 2026): a UK LGBTQ+ source's LGBTQ+ story counts even when it doesn't
+  // name race, so UK news reaches the listings (PinkNews, Attitude, Guardian). Scored below the
+  // intersectional stories so ours still lead, and capped per run (UK_BROAD_PER_SOURCE).
+  if (hasLgbtqTag && hasLgbtqContent && sourceTags.some(t => t.toLowerCase() === 'uk')) return UK_BROAD_SCORE;
+
   // Articles that only cover one community without the other — reject
   return 0;
 }
+
+const UK_BROAD_SCORE = 50;
+const UK_BROAD_PER_SOURCE = 2;
 
 // ============== RSS FETCHER ==============
 
@@ -408,8 +416,14 @@ async function getActivePeriodId(): Promise<string | null> {
   return activePeriodIdCache;
 }
 
+// Trusted = a hand-picked RSS source marked priority 'high' (Rob, 1 Nov 2026: "auto-publish
+// trusted sources"). Those go live straight away so there is always something to vote on;
+// everything else (medium/low sources, NewsAPI search) still waits in review.
+const TRUSTED_SOURCES = new Set(RSS_SOURCES.filter((s) => s.active && s.priority === 'high').map((s) => s.name));
+
 async function insertArticle(article: FetchedArticle): Promise<boolean> {
   const votingPeriodId = await getActivePeriodId();
+  const trusted = TRUSTED_SOURCES.has(article.sourceName);
   const { error } = await supabase
     .from('news_articles')
     .insert({
@@ -426,9 +440,9 @@ async function insertArticle(article: FetchedArticle): Promise<boolean> {
       interest_score: Math.min(100, article.relevanceScore),
       url_hash: article.urlHash,
       read_time: `${Math.ceil(article.content.split(/\s+/).length / 200)} min read`,
-      status: 'review',
-      published: false,
-      moderation_status: 'pending',
+      status: trusted ? 'published' : 'review',
+      published: trusted,
+      moderation_status: trusted ? 'approved' : 'pending',
       topics: article.tags,
       voting_period_id: votingPeriodId,
     });
@@ -496,8 +510,13 @@ export default async function handler(req: Request, res: Response) {
     if (req.method === 'POST') {
       let inserted = 0;
       let skipped = 0;
+      const broadTaken = new Map<string, number>();
 
       for (const article of articles) {
+        if (article.relevanceScore === UK_BROAD_SCORE && (broadTaken.get(article.sourceName) ?? 0) >= UK_BROAD_PER_SOURCE) {
+          skipped++;
+          continue;
+        }
         const exists = await articleExists(article.urlHash);
 
         if (exists) {
@@ -508,6 +527,7 @@ export default async function handler(req: Request, res: Response) {
         const success = await insertArticle(article);
         if (success) {
           inserted++;
+          if (article.relevanceScore === UK_BROAD_SCORE) broadTaken.set(article.sourceName, (broadTaken.get(article.sourceName) ?? 0) + 1);
         } else {
           skipped++;
         }

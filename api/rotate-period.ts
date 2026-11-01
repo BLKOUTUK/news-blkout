@@ -52,7 +52,7 @@ export default async function handler(req: Request, res: Response) {
     // 2. Get all published articles in this period, ranked by total_votes desc
     const { data: articles, error: articlesError } = await supabase
       .from('news_articles')
-      .select('id, title, total_votes, upvote_count, interest_score, is_featured')
+      .select('id, title, total_votes, upvote_count, interest_score, is_featured, published_at')
       .eq('voting_period_id', activePeriod.id)
       .eq('status', 'published')
       .order('total_votes', { ascending: false })
@@ -85,9 +85,17 @@ export default async function handler(req: Request, res: Response) {
         .eq('id', top3[i].id);
     }
 
-    // 4. Archive non-winners (status -> 'archived', published -> false)
-    if (rest.length > 0) {
-      const restIds = rest.map((a) => a.id);
+    // 4. Rounds are weekly and match the Sunday video, which asks people to vote (Rob, 1 Nov 2026).
+    // Anything published in the last 7 days stays open: it moves into the new round with its
+    // votes (step 7b), so the video always shows stories people can actually vote on. Only
+    // older non-winners are archived.
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const isRecent = (a: { published_at?: string | null }) =>
+      !!a.published_at && new Date(a.published_at).getTime() >= cutoff;
+    const carryIds = allArticles.filter(isRecent).map((a) => a.id);
+    const toArchive = rest.filter((a) => !isRecent(a));
+    if (toArchive.length > 0) {
+      const restIds = toArchive.map((a) => a.id);
       await supabase
         .from('news_articles')
         .update({ status: 'archived', published: false })
@@ -109,13 +117,13 @@ export default async function handler(req: Request, res: Response) {
       })
       .eq('id', activePeriod.id);
 
-    // 6. Create next period (starts now, ends in 14 days)
+    // 6. Create next period (starts now, ends in 7 days)
     const nextNumber = activePeriod.period_number + 1;
     const now = new Date();
     // Start at midnight UK time today
     const startDate = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/London' }));
     startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000 - 1000);
+    const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000 - 1000);
 
     const { data: newPeriod, error: createError } = await supabase
       .from('voting_periods')
@@ -155,6 +163,14 @@ export default async function handler(req: Request, res: Response) {
       // Non-fatal: the new period exists and ingest will fill it from here.
       console.error('Error adopting period-less articles:', adoptError);
     }
+    // 7b. Carry this week's stories into the new round (see step 4).
+    if (carryIds.length > 0) {
+      const { error: carryError } = await supabase
+        .from('news_articles')
+        .update({ voting_period_id: newPeriod.id })
+        .in('id', carryIds);
+      if (carryError) console.error('Error carrying stories into the new round:', carryError);
+    }
     const adoptedCount = adopted?.length ?? 0;
     if (adoptedCount > 0) {
       console.log(`[Rotate] Adopted ${adoptedCount} period-less article(s) into period ${nextNumber}`);
@@ -173,7 +189,8 @@ export default async function handler(req: Request, res: Response) {
             title: a.title,
             votes: a.total_votes,
           })),
-          articlesArchived: rest.length,
+          articlesArchived: toArchive.length,
+          articlesCarried: carryIds.length,
         },
         newPeriod: {
           periodNumber: newPeriod.period_number,
