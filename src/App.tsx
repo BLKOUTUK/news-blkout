@@ -96,6 +96,12 @@ function App() {
                 alt="BLKOUT"
                 className="h-10 md:h-12 w-auto hover:scale-105 transition-transform drop-shadow-lg"
               />
+              <span
+                className="text-2xl font-black tracking-tighter text-[#f5f1e8]"
+                style={{ fontFamily: "'Work Sans', system-ui, sans-serif" }}
+              >
+                BLKOUT<span className="text-liberation-pride-purple-deep">.</span>
+              </span>
               <div className="hidden md:block text-left border-l border-liberation-gold-divine/30 pl-3">
                 <div className="font-signature font-black text-lg tracking-tight uppercase text-liberation-gold-divine leading-none">News That Matters</div>
                 <p className="text-xs text-gray-400 font-disrupt italic mt-1">through a Black queer lens</p>
