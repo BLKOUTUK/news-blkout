@@ -85,7 +85,7 @@ function withHead(html: string, h: { title: string; description: string; canonic
     .replace(/<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${esc(h.description)}" />`)
     .replace(/<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${esc(h.title)}" />`)
     .replace(/<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${esc(h.description)}" />`)
-    .replace(/<meta property="og:image" content="[^"]*" \/>/, `<meta property="og:image" content="${esc(h.image || SITE + '/pwa-512x512.png')}" />\n    <meta property="og:url" content="${esc(h.canonical)}" />`)
+    .replace(/<meta property="og:image" content="[^"]*" \/>/, `<meta property="og:image" content="${esc(h.image || SITE + '/og-blkout.jpg')}" />\n    <meta property="og:url" content="${esc(h.canonical)}" />`)
     .replace(/<meta name="twitter:title" content="[^"]*" \/>/, `<meta name="twitter:title" content="${esc(h.title)}" />`)
     .replace(/<meta name="twitter:description" content="[^"]*" \/>/, `<meta name="twitter:description" content="${esc(h.description)}" />`);
 }
@@ -137,7 +137,7 @@ app.get('/article/:id', async (req, res, next) => {
       res.status(404); return res.send(shell());
     }
     const description = stripTags(cleanContent(a.excerpt || a.content)).slice(0, 300);
-    const image = a.hero_image || a.featured_image || `${SITE}/pwa-512x512.png`;
+    const image = a.hero_image || a.featured_image || `${SITE}/og-blkout.jpg`;
     const jsonld = jsonLd({
       '@context': 'https://schema.org', '@type': 'NewsArticle',
       headline: a.title, description, image,
