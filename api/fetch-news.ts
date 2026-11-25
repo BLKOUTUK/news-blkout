@@ -396,7 +396,11 @@ async function articleExists(urlHash: string): Promise<boolean> {
  * /api/vote (which rejects articles whose period isn't active) — so it can never
  * be voted on, never win, and never reach the weekly digest.
  *
- * Cached for the life of the request: one lookup, not one per article.
+ * Cached for one fetch run: one lookup, not one per article. The handler clears the
+ * cache at the start of every run. This module lives as long as the server process,
+ * so without that reset the first round looked up stays cached across weekly
+ * rotations (Nov 2026: every story landed in round 20 for ten days and the Sunday
+ * digest found 0 stories in round 22).
  */
 let activePeriodIdCache: string | null | undefined;
 async function getActivePeriodId(): Promise<string | null> {
@@ -466,6 +470,9 @@ export default async function handler(req: Request, res: Response) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+
+  // Fresh lookup of the active voting round on every run (see getActivePeriodId).
+  activePeriodIdCache = undefined;
 
   // For POST requests, verify authorization
   if (req.method === 'POST') {
